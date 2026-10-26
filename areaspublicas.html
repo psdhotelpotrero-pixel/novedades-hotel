@@ -87,7 +87,7 @@
             <option value="Primer piso">Primer piso</option>
             <option value="Planta baja">Planta baja</option>
             <option value="Caja trebejos">Caja trebejos</option>
-            <option value="Flotante resto">Flotante resto</option>
+            <option value="Restó Flotante">Restó Flotante</option>
             <option value="Climatizada">Climatizada</option>
             <option value="Gym">Gym</option>
             <option value="Bar/restaurante">Bar/restaurante</option>
@@ -125,12 +125,11 @@
       var personalNombre = document.getElementById('personalNombre').value;
       var detalleTexto = document.getElementById('novedad').value;
       
-      // Se incluye la firma del operador dentro del cuerpo del detalle
       var detalleConFirma = "👤 [" + personalNombre + "]: " + detalleTexto;
 
       var params = new URLSearchParams({
         action: "guardarNovedadMucama",
-        mucama: "ÁREAS PÚBLICAS", // Registra oficialmente el sector Áreas Públicas
+        mucama: "ÁREAS PÚBLICAS",
         piso: document.getElementById('piso').value,
         habitacion: document.getElementById('habitacion').value,
         detalle: detalleConFirma
