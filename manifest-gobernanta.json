@@ -1,0 +1,17 @@
+{
+  "name": "Gobernanta - Hotel",
+  "short_name": "Gobernanta",
+  "start_url": "./gobernanta.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
