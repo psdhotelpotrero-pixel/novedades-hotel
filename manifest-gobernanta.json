@@ -1,14 +1,13 @@
 {
-  "name": "Gobernanta - Hotel",
+  "name": "Panel Gobernanta",
   "short_name": "Gobernanta",
-  "start_url": "./gobernanta.html",
+  "start_url": "gobernanta.html",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#8b5cf6",
-  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "src": "https://lh3.googleusercontent.com/d/1V0-huiEthAwdnflfAk9tMvMDw2JqFLOl",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
