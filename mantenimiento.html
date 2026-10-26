@@ -6,7 +6,7 @@
   <title>Panel de Mantenimiento</title>
   
   <!-- Manifest para PWA -->
-  <link rel="manifest" href="manifest-mantenimiento.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
 
   <style>
@@ -66,6 +66,20 @@
     }
     .btn-shift.active { background-color: var(--danger); }
 
+    /* BARRA DE FILTROS EN MANTENIMIENTO */
+    .filter-bar {
+      flex-shrink: 0;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; 
+      margin-bottom: 8px; background: var(--card-bg); padding: 8px 10px; 
+      border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03); align-items: end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 2px; }
+    .filter-label { font-size: 0.68rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+
+    .filter-input { width: 100%; padding: 6px 8px !important; border: 1px solid var(--border) !important; border-radius: 6px !important; font-size: 0.82rem !important; background: #fff; color: var(--text); }
+    .btn-reset { background: #e2e8f0; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; color: #475569; cursor: pointer; height: 32px; }
+
     .lista-notas { 
       flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
       display: flex; flex-direction: column; gap: 10px; padding-right: 2px;
@@ -79,7 +93,7 @@
     
     .card-nota.pendiente { border-left-color: #d97706 !important; background: #fffdf5; }
     .card-nota.es-gobernanta { border-left-color: var(--gobernanta-color) !important; background: #faf5ff; }
-    .card-nota.es-areas-publicas { border-left-color: var(--areas-publicas-color) !important; background: #f3e8ff; }
+    .card-nota.es-areas-publicas { border-left-color: #f59e0b !important; background: #fffdf5; }
     .card-nota.solucionado { border-left-color: var(--success) !important; background: #f0fdf4; }
 
     .nota-header { display: flex; flex-direction: column; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; gap: 4px; }
@@ -89,10 +103,11 @@
     .badge-count.pending { background: #b45309; color: #ffffff; }
     .badge-count.ok { background: var(--success); color: #ffffff; }
 
+    /* ESTILOS DE BADGES POR SECTOR Y COLOR */
     .badge-origen { padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-origen.gob { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
-    .badge-origen.areas { background-color: #e9d5ff; color: #581c87; border: 1px solid #c084fc; }
-    .badge-origen.mucama { background-color: #e2e8f0; color: #334155; }
+    .badge-origen.mucama { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-origen.areas { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 
     .nota-meta { font-size: 0.72rem; color: #64748b; }
     .nota-body { font-size: 0.85rem; color: #1e293b; line-height: 1.35; word-break: break-word; font-weight: 500; }
@@ -192,6 +207,32 @@
       </div>
     </div>
 
+    <!-- BARRA DE FILTROS -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label">Buscar</label>
+        <input type="text" id="buscador" class="filter-input" placeholder="🔍 Hab., Origen..." oninput="resetearPaginaYRender()">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Sector</label>
+        <select id="filtroSector" class="filter-input" onchange="actualizarSubfiltroUbicacion()">
+          <option value="">🏢 Todos</option>
+          <option value="MUCAMA">Mucamas</option>
+          <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" id="labelUbicacion">Ubicación / Piso</label>
+        <select id="filtroUbicacion" class="filter-input" onchange="resetearPaginaYRender()">
+          <option value="">📍 Todas</option>
+        </select>
+      </div>
+
+      <button class="btn-reset" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+
     <div id="contenedorNotas" class="lista-notas">
       <div class="loading">Cargando novedades...</div>
     </div>
@@ -240,8 +281,6 @@
 
     var paginaActual = 1;
     var NOTAS_POR_PAGINA = 15;
-
-    var personalAreasPublicas = ["SOLEDAD Q.", "BELÉN", "BELEN", "SOLEDAD C.", "ANDREA E.", "PABLO"];
 
     var DURACION_TURNO_SEGUNDOS = 8 * 3600;
     var ROL_ACTUAL = "MANTENIMIENTO";
@@ -513,6 +552,55 @@
       chequearNovedadesServidor();
     }
 
+    function resetearPaginaYRender() {
+      paginaActual = 1;
+      renderNotas();
+    }
+
+    function actualizarSubfiltroUbicacion() {
+      var sector = document.getElementById('filtroSector').value;
+      var comboUbicacion = document.getElementById('filtroUbicacion');
+      var labelUbicacion = document.getElementById('labelUbicacion');
+
+      comboUbicacion.innerHTML = '';
+
+      if (sector === 'MUCAMA') {
+        labelUbicacion.innerText = 'Piso';
+        comboUbicacion.innerHTML = `
+          <option value="">🏢 Todos los Pisos</option>
+          <option value="2">Piso 2</option>
+          <option value="3">Piso 3</option>
+          <option value="4">Piso 4</option>
+          <option value="5">Piso 5</option>
+          <option value="6">Piso 6</option>
+        `;
+      } else if (sector === 'AREAS_PUBLICAS') {
+        labelUbicacion.innerText = 'Área Específica';
+        comboUbicacion.innerHTML = `
+          <option value="">🏛️ Todas las Áreas</option>
+          <option value="Primer piso">Primer piso</option>
+          <option value="Planta baja">Planta baja</option>
+          <option value="Caja trebejos">Caja trebejos</option>
+          <option value="Restó Flotante">Restó Flotante</option>
+          <option value="Climatizada">Climatizada</option>
+          <option value="Gym">Gym</option>
+          <option value="Bar/restaurante">Bar/restaurante</option>
+          <option value="Parque">Parque</option>
+        `;
+      } else {
+        labelUbicacion.innerText = 'Ubicación / Piso';
+        comboUbicacion.innerHTML = `<option value="">📍 Todas</option>`;
+      }
+
+      resetearPaginaYRender();
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('buscador').value = '';
+      document.getElementById('filtroSector').value = '';
+      actualizarSubfiltroUbicacion();
+    }
+
     function formatearHistorialRespuestas(historialRaw) {
       if (!historialRaw) return '';
 
@@ -565,13 +653,43 @@
       var contenedor = document.getElementById('contenedorNotas');
       var barPaginacion = document.getElementById('barPaginacion');
       
-      var novedades = novedadesLocales.filter(n => n.estado !== 'FINALIZADO');
+      var txtBusqueda = document.getElementById('buscador').value.toLowerCase().trim();
+      var selSector = document.getElementById('filtroSector').value;
+      var selUbicacion = document.getElementById('filtroUbicacion').value;
+
+      var novedades = novedadesLocales.filter(n => {
+        var esActiva = n.estado !== 'FINALIZADO';
+        var coincideTexto = (n.habitacion || '').toString().toLowerCase().includes(txtBusqueda) || 
+                            (n.mucama || '').toLowerCase().includes(txtBusqueda) || 
+                            (n.detalle || '').toLowerCase().includes(txtBusqueda);
+
+        var coincideSector = true;
+        var origenUpper = (n.mucama || '').toUpperCase().trim();
+        
+        if (selSector === 'MUCAMA') {
+          coincideSector = (origenUpper !== 'ÁREAS PÚBLICAS' && origenUpper !== 'AREAS PUBLICAS');
+        } else if (selSector === 'AREAS_PUBLICAS') {
+          coincideSector = (origenUpper === 'ÁREAS PÚBLICAS' || origenUpper === 'AREAS PUBLICAS');
+        }
+
+        var coincideUbicacion = true;
+        if (selUbicacion !== '') {
+          var ubUpper = selUbicacion.toUpperCase().trim();
+          var pisoStr = (n.piso || '').toString().toUpperCase().trim();
+          var habStr = (n.habitacion || '').toString().toUpperCase().trim();
+
+          coincideUbicacion = (pisoStr === ubUpper || habStr === ubUpper);
+        }
+
+        return esActiva && coincideTexto && coincideSector && coincideUbicacion;
+      });
+
       novedades.sort((a, b) => (a.estado === 'SOLUCIONADO' ? 1 : 0) - (b.estado === 'SOLUCIONADO' ? 1 : 0));
 
       var totalNotas = novedades.length;
 
       if (totalNotas === 0) {
-        contenedor.innerHTML = '<div class="loading">No hay novedades pendientes.</div>';
+        contenedor.innerHTML = '<div class="loading">No hay novedades registradas.</div>';
         barPaginacion.style.display = 'none';
         return;
       }
@@ -589,20 +707,18 @@
         var esSol = n.estado === 'SOLUCIONADO';
         var badgeClass = esSol ? 'ok' : 'pending';
         
-        var esNotaGob = n.mucama === 'GOBERNANTA';
-        var esAreasPublicas = personalAreasPublicas.includes((n.mucama || '').toUpperCase().trim());
-
+        var origenUpper = (n.mucama || '').toUpperCase().trim();
         var badgeOrigen = '';
         var claseCardEspecial = '';
 
-        if (esNotaGob) {
+        if (origenUpper === 'GOBERNANTA') {
           badgeOrigen = '<span class="badge-origen gob">👑 GOBERNANTA</span>';
           claseCardEspecial = 'es-gobernanta';
-        } else if (esAreasPublicas) {
-          badgeOrigen = `<span class="badge-origen areas">🏛️ Áreas Públicas: ${n.mucama}</span>`;
+        } else if (origenUpper === 'ÁREAS PÚBLICAS' || origenUpper === 'AREAS PUBLICAS') {
+          badgeOrigen = '<span class="badge-origen areas">🏛️ ÁREAS PÚBLICAS</span>';
           claseCardEspecial = 'es-areas-publicas';
         } else {
-          badgeOrigen = `<span class="badge-origen mucama">🧹 Mucama: ${n.mucama}</span>`;
+          badgeOrigen = `<span class="badge-origen mucama">🧹 MUCAMA: ${n.mucama}</span>`;
         }
 
         var respuestasHtml = formatearHistorialRespuestas(n.historialRespuestas);
