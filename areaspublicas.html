@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Áreas Públicas - Registro de Novedades</title>
+
+  <!-- Manifest para PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8b5cf6">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --primary: #8b5cf6;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+
+    header {
+      margin-bottom: 20px; background: var(--card-bg); padding: 20px;
+      border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center;
+    }
+    header h1 { font-size: 1.3rem; color: #1e293b; }
+
+    .card { background: var(--card-bg); border-radius: 12px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
+    
+    input, select, textarea {
+      width: 100%; padding: 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 1rem; color: var(--text); background: #fff;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+    .btn-submit {
+      width: 100%; background-color: var(--primary); color: white; border: none;
+      padding: 14px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; margin-top: 10px;
+    }
+    .btn-submit:active { opacity: 0.85; }
+
+    .alert-success {
+      display: none; margin-top: 15px; padding: 12px; background: #dcfce7;
+      color: #166534; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 10px; }
+      .card { padding: 16px; }
+      input, select, textarea { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🏛️ Registro de Novedades - Áreas Públicas</h1>
+      <small style="color: #64748b;">Carga rápida de notas y desperfectos por sectores</small>
+    </header>
+
+    <div class="card">
+      <form id="formAreasPublicas">
+        <div class="form-group">
+          <label for="personalNombre">Nombre:</label>
+          <select id="personalNombre" required>
+            <option value="">Seleccione su nombre...</option>
+            <option value="Soledad Q.">Soledad Q.</option>
+            <option value="Belén">Belén</option>
+            <option value="Soledad C.">Soledad C.</option>
+            <option value="Andrea E.">Andrea E.</option>
+            <option value="Pablo">Pablo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="piso">Sector / Área:</label>
+          <select id="piso" required>
+            <option value="">Seleccione el área...</option>
+            <option value="Primer piso">Primer piso</option>
+            <option value="Planta baja">Planta baja</option>
+            <option value="Caja trebejos">Caja trebejos</option>
+            <option value="Flotante resto">Flotante resto</option>
+            <option value="Climatizada">Climatizada</option>
+            <option value="Gym">Gym</option>
+            <option value="Bar/restaurante">Bar/restaurante</option>
+            <option value="Parque">Parque</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="habitacion">N° / Ubicación Específica:</label>
+          <input type="text" id="habitacion" placeholder="Ej: Baño damas, Pasillo, etc." required>
+        </div>
+
+        <div class="form-group">
+          <label for="novedad">Detalle de la Novedad:</label>
+          <textarea id="novedad" rows="4" placeholder="Describa el problema o novedad detectada..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnEnviar">📤 REGISTRAR NOVEDAD</button>
+      </form>
+
+      <div id="mensajeExito" class="alert-success">✔ Novedad registrada con éxito en el sistema.</div>
+    </div>
+  </div>
+
+  <script>
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx8CwidL3qa9-exvHwZCwI_Z06tsdMW8vCggj1gIAgENCOrXjNFUaepy-mIJM9d9FtCg/exec";
+
+    document.getElementById('formAreasPublicas').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      var btn = document.getElementById('btnEnviar');
+      btn.innerText = "Cargando...";
+      btn.disabled = true;
+
+      var params = new URLSearchParams({
+        action: "guardarNovedadMucama",
+        mucama: document.getElementById('personalNombre').value,
+        piso: document.getElementById('piso').value,
+        habitacion: document.getElementById('habitacion').value,
+        detalle: document.getElementById('novedad').value
+      });
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params
+      })
+      .then(res => res.json())
+      .then(data => {
+        btn.innerText = "📤 REGISTRAR NOVEDAD";
+        btn.disabled = false;
+        document.getElementById('formAreasPublicas').reset();
+
+        var msj = document.getElementById('mensajeExito');
+        msj.style.display = 'block';
+        setTimeout(() => { msj.style.display = 'none'; }, 3000);
+      })
+      .catch(err => {
+        alert("Error al conectar con el servidor. Intente de nuevo.");
+        btn.innerText = "📤 REGISTRAR NOVEDAD";
+        btn.disabled = false;
+      });
+    });
+  </script>
+
+  <!-- Registro del Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker Registrado'))
+          .catch(err => console.log('Error SW:', err));
+      });
+    }
+  </script>
+</body>
+</html>
