@@ -1,14 +1,13 @@
 {
-  "name": "Mantenimiento - Hotel",
+  "name": "Panel Mantenimiento",
   "short_name": "Mantenimiento",
-  "start_url": "./mantenimiento.html",
+  "start_url": "mantenimiento.html",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#ffffff",
   "theme_color": "#2563eb",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "src": "https://lh3.googleusercontent.com/d/1V0-huiEthAwdnflfAk9tMvMDw2JqFLOl",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
