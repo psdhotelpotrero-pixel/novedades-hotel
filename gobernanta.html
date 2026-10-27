@@ -22,6 +22,8 @@
       --warning: #f59e0b;
       --gobernanta-color: #8b5cf6;
       --gobernanta-hover: #7c3aed;
+      --ap-color: #d97706;
+      --ap-bg: #fffbe6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -143,11 +145,22 @@
     .card-nota {
       background: var(--card-bg); border-radius: 12px; padding: clamp(14px, 2.5vw, 18px);
       border: 1px solid var(--border); border-left: 8px solid var(--warning); box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex; flex-direction: column; gap: 10px; transition: all 0.2s;
     }
 
     .card-nota.pendiente { border-left-color: #d97706 !important; background: #fffdf5; border-top: 1px solid #fde68a; border-right: 1px solid #fde68a; border-bottom: 1px solid #fde68a; }
     .card-nota.es-gobernanta { border-left-color: var(--gobernanta-color) !important; background: #faf5ff; }
+    
+    /* DISTINCIÓN PARA TARJETAS / NOTIFICACIONES DE ÁREAS PÚBLICAS */
+    .card-nota.es-areas-publicas {
+      border-left-color: var(--ap-color) !important;
+      background: var(--ap-bg) !important;
+      border-top: 1px solid #fde68a;
+      border-right: 1px solid #fde68a;
+      border-bottom: 1px solid #fde68a;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+    }
+
     .card-nota.solucionado { border-left-color: #16a34a !important; background: #f0fdf4; border-top: 1px solid #bbf7d0; border-right: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; }
     .card-nota.finalizado { border-left-color: #64748b; opacity: 0.8; background: #f8fafc; }
 
@@ -165,7 +178,7 @@
     .badge-origen { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-origen.gob { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
     .badge-origen.mucama { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .badge-origen.areas { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-origen.areas { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 800; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.15); }
 
     .respuestas-container { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .respuesta-normal { background-color: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #3b82f6; padding: 8px 12px; border-radius: 8px; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
@@ -297,12 +310,21 @@
       </div>
     </div>
 
+    <!-- Formulario de creación de nota adaptativo -->
     <div id="formCrearNota" class="form-crear-card">
       <h3>👑 Crear Nueva Solicitud de Gobernanta</h3>
       <form id="formGobernantaNota">
         <div class="form-grid">
           <div class="form-group">
-            <label>Piso:</label>
+            <label>Sector / Origen:</label>
+            <select id="gobSector" class="input-form" onchange="cambiarSectorFormGobernanta()" required>
+              <option value="MUCAMA">Mucama (Pisos / Habitaciones)</option>
+              <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupGobPiso">
+            <label id="labelGobPiso">Piso:</label>
             <select id="gobPiso" class="input-form" required>
               <option value="">Seleccionar Piso...</option>
               <option value="2">Piso 2</option>
@@ -310,18 +332,20 @@
               <option value="4">Piso 4</option>
               <option value="5">Piso 5</option>
               <option value="6">Piso 6</option>
-              <option value="FLOTANTE">FLOTANTE</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>N° Habitación:</label>
-            <input type="number" id="gobHabitacion" class="input-form" placeholder="Ej: 305" required>
+
+          <div class="form-group" id="groupGobHabitacion">
+            <label id="labelGobHabitacion">N° Habitación:</label>
+            <input type="text" id="gobHabitacion" class="input-form" placeholder="Ej: 305" required>
           </div>
         </div>
+
         <div class="form-group" style="margin-bottom: 12px;">
           <label>Detalle de la Solicitud:</label>
           <textarea id="gobDetalle" class="input-form" rows="3" placeholder="Escriba la orden o solicitud requerida a Mantenimiento..." required></textarea>
         </div>
+
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button type="button" class="btn-reset" onclick="toggleFormNota()" style="height: auto;">Cancelar</button>
           <button type="submit" class="btn-gob purple" id="btnEnviarGob">📤 Enviar a Mantenimiento</button>
@@ -468,6 +492,16 @@
     var tiempoLimiteAlarma = null;
 
     var WAV_SIREN_BASE64 = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFb3mCiI14eIJ4dXZ0cHRvdHB2en+CgoSEhIWFhoeIiYqLjI2Oj5CSk5WVl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tc=";
+
+    // Helper para normalizar textos (elimina tildes, convierte a mayúsculas y quita espacios sobrantes)
+    function normalizarTexto(str) {
+      if (!str) return '';
+      return str.toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+    }
 
     function inicializarCanalMultimedia() {
       if (!audioHTML5) {
@@ -694,7 +728,7 @@
               if (!idsNotasConocidas.has(n.rowIndex)) {
                 idsNotasConocidas.add(n.rowIndex);
                 if (primeraCargaRealizada && n.estado === 'PENDIENTE') {
-                  var origen = (n.mucama || '').toUpperCase().trim();
+                  var origen = normalizarTexto(n.mucama);
                   if (origen !== 'GOBERNANTA') {
                     hayNuevaNotaDeMucamaOAreas = true;
                   }
@@ -730,11 +764,53 @@
 
     window.onload = function() {
       cargarNotasGobernanta();
+      cambiarSectorFormGobernanta();
     };
 
     function toggleFormNota() {
       var box = document.getElementById('formCrearNota');
       box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Cambia los campos del formulario de la Gobernanta según si selecciona MUCAMA o ÁREAS PÚBLICAS
+    function cambiarSectorFormGobernanta() {
+      var sector = document.getElementById('gobSector').value;
+      var comboPiso = document.getElementById('gobPiso');
+      var labelPiso = document.getElementById('labelGobPiso');
+      var inputHab = document.getElementById('gobHabitacion');
+      var groupHab = document.getElementById('groupGobHabitacion');
+
+      if (sector === 'AREAS_PUBLICAS') {
+        labelPiso.innerText = 'Área Pública / Sector:';
+        comboPiso.innerHTML = `
+          <option value="">Seleccionar Área...</option>
+          <option value="Primer piso">Primer piso</option>
+          <option value="Planta baja">Planta baja</option>
+          <option value="Caja trebejos">Caja trebejos</option>
+          <option value="Restó Flotante">Restó Flotante</option>
+          <option value="Climatizada">Climatizada</option>
+          <option value="Gym">Gym</option>
+          <option value="Bar/restaurante">Bar/restaurante</option>
+          <option value="Parque">Parque</option>
+        `;
+        groupHab.style.display = 'none';
+        inputHab.required = false;
+        inputHab.value = 'Área Pública';
+      } else {
+        labelPiso.innerText = 'Piso:';
+        comboPiso.innerHTML = `
+          <option value="">Seleccionar Piso...</option>
+          <option value="2">Piso 2</option>
+          <option value="3">Piso 3</option>
+          <option value="4">Piso 4</option>
+          <option value="5">Piso 5</option>
+          <option value="6">Piso 6</option>
+          <option value="FLOTANTE">FLOTANTE</option>
+        `;
+        groupHab.style.display = 'flex';
+        inputHab.required = true;
+        if (inputHab.value === 'Área Pública') inputHab.value = '';
+      }
     }
 
     function cambiarPestana(nuevoEstado, elemento) {
@@ -802,6 +878,7 @@
     document.getElementById('formGobernantaNota').addEventListener('submit', function(e) {
       e.preventDefault();
 
+      var sector = document.getElementById('gobSector').value;
       var piso = document.getElementById('gobPiso').value;
       var habitacion = document.getElementById('gobHabitacion').value;
       var detalle = document.getElementById('gobDetalle').value;
@@ -809,8 +886,11 @@
       var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
       var nextIndex = novedadesLocales.length > 0 ? Math.max(...novedadesLocales.map(n => n.rowIndex || 0)) + 1 : 2;
 
+      var origenFirma = (sector === 'AREAS_PUBLICAS') ? "ÁREAS PÚBLICAS" : "GOBERNANTA";
+      var habFinal = (sector === 'AREAS_PUBLICAS') ? (piso || "Áreas Públicas") : habitacion;
+
       var nuevaNotaLocal = {
-        rowIndex: nextIndex, fecha: fechaAhora, mucama: "GOBERNANTA", piso: piso, habitacion: habitacion,
+        rowIndex: nextIndex, fecha: fechaAhora, mucama: origenFirma, piso: piso, habitacion: habFinal,
         detalle: detalle, estado: "PENDIENTE", historialRespuestas: "", detalleSolucion: "", solucionadoPor: ""
       };
 
@@ -820,10 +900,11 @@
       renderNotasGobernanta();
 
       document.getElementById('formGobernantaNota').reset();
+      cambiarSectorFormGobernanta();
       toggleFormNota();
 
       var params = new URLSearchParams({
-        action: "guardarNovedadMucama", mucama: "GOBERNANTA", piso: piso, habitacion: habitacion, detalle: detalle
+        action: "guardarNovedadMucama", mucama: origenFirma, piso: piso, habitacion: habFinal, detalle: detalle
       });
 
       fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
@@ -1015,7 +1096,7 @@
 
       actualizarContadorPestanaDeposito();
 
-      var txtBusqueda = document.getElementById('buscador').value.toLowerCase().trim();
+      var txtBusqueda = normalizarTexto(document.getElementById('buscador').value);
       var selSector = document.getElementById('filtroSector').value;
       var selUbicacion = document.getElementById('filtroUbicacion').value;
       var valDia = document.getElementById('filtroDia').value;
@@ -1023,28 +1104,42 @@
 
       var filtradas = novedadesLocales.filter(n => {
         var coincideEstado = n.estado === estadoPestanaActiva;
-        var coincideTexto = n.habitacion.toString().toLowerCase().includes(txtBusqueda) || 
-                            n.mucama.toLowerCase().includes(txtBusqueda) || 
-                            n.detalle.toLowerCase().includes(txtBusqueda);
+        
+        var habNorm = normalizarTexto(n.habitacion);
+        var mucamaNorm = normalizarTexto(n.mucama);
+        var detalleNorm = normalizarTexto(n.detalle);
+
+        var coincideTexto = !txtBusqueda || 
+                            habNorm.includes(txtBusqueda) || 
+                            mucamaNorm.includes(txtBusqueda) || 
+                            detalleNorm.includes(txtBusqueda);
 
         // Validación de Sector
         var coincideSector = true;
-        var origenUpper = (n.mucama || '').toUpperCase().trim();
+        var esAreasPublicas = mucamaNorm.includes('AREAS PUBLICAS') || 
+                              mucamaNorm.includes('AREA PUBLICA') || 
+                              habNorm.includes('RESTO') || 
+                              habNorm.includes('FLOTANTE') ||
+                              habNorm.includes('CLIMATIZADA') ||
+                              habNorm.includes('GYM') ||
+                              habNorm.includes('TREBEJOS') ||
+                              habNorm.includes('PARQUE');
         
         if (selSector === 'MUCAMA') {
-          coincideSector = (origenUpper !== 'ÁREAS PÚBLICAS' && origenUpper !== 'AREAS PUBLICAS');
+          coincideSector = !esAreasPublicas && mucamaNorm !== 'GOBERNANTA';
         } else if (selSector === 'AREAS_PUBLICAS') {
-          coincideSector = (origenUpper === 'ÁREAS PÚBLICAS' || origenUpper === 'AREAS PUBLICAS');
+          coincideSector = esAreasPublicas;
         }
 
-        // Validación de Piso / Área específica
+        // Validación de Piso / Área específica (Filtro flexible insensible a tildes)
         var coincideUbicacion = true;
         if (selUbicacion !== '') {
-          var ubUpper = selUbicacion.toUpperCase().trim();
-          var pisoStr = (n.piso || '').toString().toUpperCase().trim();
-          var habStr = (n.habitacion || '').toString().toUpperCase().trim();
+          var ubNorm = normalizarTexto(selUbicacion);
+          var pisoNorm = normalizarTexto(n.piso);
 
-          coincideUbicacion = (pisoStr === ubUpper || habStr === ubUpper);
+          coincideUbicacion = (pisoNorm === ubNorm || habNorm === ubNorm) ||
+                             (pisoNorm.includes(ubNorm) || ubNorm.includes(pisoNorm)) ||
+                             (habNorm.includes(ubNorm) || ubNorm.includes(habNorm));
         }
 
         var coincideFecha = true;
@@ -1084,13 +1179,27 @@
         if (n.estado === 'FINALIZADO') badgeClass = 'final';
 
         // LÓGICA DE BADGES DE ORIGEN POR COLOR Y SECTOR
-        var origenUpper = (n.mucama || '').toUpperCase().trim();
-        var badgeOrigen = '';
+        var mucamaNorm = normalizarTexto(n.mucama);
+        var habNorm = normalizarTexto(n.habitacion);
 
-        if (origenUpper === 'GOBERNANTA') {
+        var esAP = mucamaNorm.includes('AREAS PUBLICAS') || 
+                   mucamaNorm.includes('AREA PUBLICA') || 
+                   habNorm.includes('RESTO') || 
+                   habNorm.includes('FLOTANTE') ||
+                   habNorm.includes('CLIMATIZADA') ||
+                   habNorm.includes('GYM') ||
+                   habNorm.includes('TREBEJOS') ||
+                   habNorm.includes('PARQUE');
+
+        var badgeOrigen = '';
+        var cardExtraClass = '';
+
+        if (mucamaNorm === 'GOBERNANTA') {
           badgeOrigen = '<span class="badge-origen gob">👑 GOBERNANTA</span>';
-        } else if (origenUpper === 'ÁREAS PÚBLICAS' || origenUpper === 'AREAS PUBLICAS') {
+          cardExtraClass = 'es-gobernanta';
+        } else if (esAP) {
           badgeOrigen = '<span class="badge-origen areas">🏛️ ÁREAS PÚBLICAS</span>';
+          cardExtraClass = 'es-areas-publicas';
         } else {
           badgeOrigen = `<span class="badge-origen mucama">🧹 MUCAMA: ${n.mucama}</span>`;
         }
@@ -1103,7 +1212,7 @@
         }
 
         html += `
-          <div class="card-nota ${n.estado.toLowerCase()} ${origenUpper === 'GOBERNANTA' ? 'es-gobernanta' : ''}">
+          <div class="card-nota ${n.estado.toLowerCase()} ${cardExtraClass}">
             <div class="nota-header">
               <div>
                 <span class="nota-title">Piso/Zona: ${n.piso} — Habitación/Ubicación: ${n.habitacion}</span>
