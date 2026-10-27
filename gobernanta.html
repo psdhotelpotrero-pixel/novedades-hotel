@@ -464,7 +464,7 @@
   </div>
 
   <script>
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZ947xY4ByH8CTzXA9EM_D8FH-S-h6yDlkeTF8B9U3UhuW814qePa65fGhgKC4mDVW/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx8CwidL3qa9-exvHwZCwI_Z06tsdMW8vCggj1gIAgENCOrXjNFUaepy-mIJM9d9FtCg/exec";
     var novedadesLocales = [];
     var todasNovedadesGeneral = []; 
     var estadoPestanaActiva = "PENDIENTE";
@@ -961,16 +961,18 @@
         var esOlvido = n.categoria && n.categoria.toLowerCase() === 'olvidos';
         var detalleLower = (n.detalle || '').toLowerCase();
         
-        var estaPendienteEnvio = detalleLower.indexOf("pendiente") !== -1 || 
-                                 detalleLower.indexOf("reactivada") !== -1 || 
-                                 detalleLower.indexOf("guía") !== -1 || 
-                                 detalleLower.indexOf("guia") !== -1 ||
-                                 detalleLower.indexOf("envío") !== -1 ||
-                                 detalleLower.indexOf("envio") !== -1;
-                                 
-        var estaEntregado = (detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1) && detalleLower.indexOf("reactivada") === -1;
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
+        
+        var estaPendienteEnvio = !estaEntregado && (
+          detalleLower.indexOf("pendiente de") !== -1 || 
+          detalleLower.indexOf("reactivada") !== -1 || 
+          detalleLower.indexOf("guía") !== -1 || 
+          detalleLower.indexOf("guia") !== -1 ||
+          detalleLower.indexOf("envío") !== -1 ||
+          detalleLower.indexOf("envio") !== -1
+        );
 
-        return esOlvido && estaPendienteEnvio && !estaEntregado;
+        return esOlvido && estaPendienteEnvio;
       }).length;
 
       var badge = document.getElementById('badge-tab-deposito');
@@ -982,7 +984,7 @@
       if (btnTab) {
         if (countEnvios > 0) {
           btnTab.classList.add('tiene-envios');
-          if (textoTab) textoTab.innerText = "📦 PENDIENTES DE ENVÍO";
+          if (textoTab) textoTab.innerText = "📦 PENDIENTE DE ENVÍO";
         } else {
           btnTab.classList.remove('tiene-envios');
           if (textoTab) textoTab.innerText = "📦 Depósito";
@@ -1334,16 +1336,18 @@
 
         var detalleLower = (item.detalle || '').toLowerCase();
 
-        var estaPendienteEnvio = detalleLower.indexOf("pendiente") !== -1 || 
-                                 detalleLower.indexOf("reactivada") !== -1 || 
-                                 detalleLower.indexOf("guía") !== -1 || 
-                                 detalleLower.indexOf("guia") !== -1 ||
-                                 detalleLower.indexOf("envío") !== -1 ||
-                                 detalleLower.indexOf("envio") !== -1;
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
+        
+        var estaPendienteEnvio = !estaEntregado && (
+          detalleLower.indexOf("pendiente de") !== -1 || 
+          detalleLower.indexOf("reactivada") !== -1 || 
+          detalleLower.indexOf("guía") !== -1 || 
+          detalleLower.indexOf("guia") !== -1 ||
+          detalleLower.indexOf("envío") !== -1 ||
+          detalleLower.indexOf("envio") !== -1
+        );
 
-        var estaEntregado = (detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1) && detalleLower.indexOf("reactivada") === -1;
-
-        // SI YA FUE ENTREGADO, NO MOSTRAR EN LA LISTA DE PENDIENTES DE ENVÍO
+        // SI YA FUE ENTREGADO, NO MOSTRAR EN LA LISTA DE PENDIENTES DE ENVÍO DE GOBERNANTA
         if (estaEntregado) return false;
 
         if (!txtApellido && !valFecha) {
@@ -1375,7 +1379,7 @@
       resultados.forEach(function(item) {
         var detalleLower = (item.detalle || '').toLowerCase();
         
-        var estaEntregado = (detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1) && detalleLower.indexOf("reactivada") === -1;
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
         var estaPendienteEnvio = !estaEntregado && (detalleLower.indexOf("pendiente") !== -1 || detalleLower.indexOf("reactivada") !== -1 || detalleLower.indexOf("guía") !== -1 || detalleLower.indexOf("guia") !== -1);
 
         var claseCard = 'card-olvido';
@@ -1443,11 +1447,11 @@
       if (!nov) return;
 
       var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
-      var notaEntrega = "\n\n✅ [ENTREGADO el " + fechaAhora + " por GOBERNANTA]";
+      var textoEntrega = "✅ [ENTREGADO el " + fechaAhora + " por GOBERNANTA]";
 
-      nov.detalle += notaEntrega;
+      nov.detalle += "\n\n" + textoEntrega;
 
-      // AL MARCAR COMO ENTREGADO SE QUITA DE LA VISTA DE ENVÍOS PENDIENTES Y SE ACTUALIZAN BADGES Y CONTADORES
+      // ACTUALIZAR INMEDIATAMENTE CONTADORES Y LA VISTA DE GOBERNANTA
       actualizarContadorPestanaDeposito();
       buscarEnDeposito();
 
@@ -1455,7 +1459,7 @@
         action: "agregarRespuesta",
         rowIndex: rowIndex,
         nombreUsuario: "GOBERNANTA",
-        textoRespuesta: "✅ [ENTREGADO el " + fechaAhora + " por GOBERNANTA]"
+        textoRespuesta: textoEntrega
       });
       fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
     }
