@@ -1343,6 +1343,7 @@
 
         var estaEntregado = (detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1) && detalleLower.indexOf("reactivada") === -1;
 
+        // SI YA FUE ENTREGADO, NO MOSTRAR EN LA LISTA DE PENDIENTES DE ENVÍO
         if (estaEntregado) return false;
 
         if (!txtApellido && !valFecha) {
@@ -1373,10 +1374,13 @@
       var html = '';
       resultados.forEach(function(item) {
         var detalleLower = (item.detalle || '').toLowerCase();
-        var estaPendienteEnvio = detalleLower.indexOf("pendiente") !== -1 || detalleLower.indexOf("reactivada") !== -1 || detalleLower.indexOf("guía") !== -1 || detalleLower.indexOf("guia") !== -1;
+        
+        var estaEntregado = (detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1) && detalleLower.indexOf("reactivada") === -1;
+        var estaPendienteEnvio = !estaEntregado && (detalleLower.indexOf("pendiente") !== -1 || detalleLower.indexOf("reactivada") !== -1 || detalleLower.indexOf("guía") !== -1 || detalleLower.indexOf("guia") !== -1);
 
         var claseCard = 'card-olvido';
         if (estaPendienteEnvio) claseCard += ' pendiente-envio';
+        if (estaEntregado) claseCard += ' entregado';
 
         html += '<div class="' + claseCard + '">';
         html += '  <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; margin-bottom: 4px;">';
@@ -1386,18 +1390,22 @@
         
         html += parsearDetalleConRespuestas(item.detalle);
 
-        html += '  <div style="display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px; align-items: center; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">';
-        html += '    <input type="text" id="respDeposito_' + item.rowIndex + '" class="deposito-input" placeholder="Escribir comentario sobre el envío...">';
-        html += '    <button class="btn-gob blue" onclick="responderDepositoGobernanta(' + item.rowIndex + ')">📘 Responder</button>';
-        html += '  </div>';
+        if (!estaEntregado) {
+          html += '  <div style="display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px; align-items: center; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">';
+          html += '    <input type="text" id="respDeposito_' + item.rowIndex + '" class="deposito-input" placeholder="Escribir comentario sobre el envío...">';
+          html += '    <button class="btn-gob blue" onclick="responderDepositoGobernanta(' + item.rowIndex + ')">📘 Responder</button>';
+          html += '  </div>';
+        }
 
         html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px;">';
         if (estaPendienteEnvio) {
           html += '    <span class="badge-count pending" style="align-self:center;">📦 PENDIENTE DE ENVÍO (GUÍA)</span>';
+          html += '    <button class="btn-entregado" onclick="marcarComoEntregadoDirecto(' + item.rowIndex + ')">✔ Marcar como Entregado</button>';
+        } else if (estaEntregado) {
+          html += '    <span class="badge-entregado">✅ ENTREGADO Y ARCHIVADO</span>';
         } else {
           html += '    <span></span>';
         }
-        html += '    <button class="btn-entregado" onclick="marcarComoEntregadoDirecto(' + item.rowIndex + ')">✔ Marcar como Entregado</button>';
         html += '  </div>';
 
         html += '</div>';
@@ -1439,8 +1447,9 @@
 
       nov.detalle += notaEntrega;
 
-      buscarEnDeposito();
+      // AL MARCAR COMO ENTREGADO SE QUITA DE LA VISTA DE ENVÍOS PENDIENTES Y SE ACTUALIZAN BADGES Y CONTADORES
       actualizarContadorPestanaDeposito();
+      buscarEnDeposito();
 
       var params = new URLSearchParams({
         action: "agregarRespuesta",
