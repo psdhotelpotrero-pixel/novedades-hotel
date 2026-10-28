@@ -288,7 +288,7 @@
   <div class="container">
     <header>
       <div>
-        <h1>Panel Gerencia </h1>
+        <h1>Panel GOBERNANTA </h1>
         <small id="fecha-gobernanta" style="color: #64748b;"></small>
       </div>
       <div class="header-actions">
@@ -484,7 +484,7 @@
     var audioCtx = null;
     var audioHTML5 = null;
     var audioDesbloqueado = false;
-    var silenciadoPermanente = localStorage.getItem('GOB_GERENCIA_SILENCIADO') === 'true';
+    var silenciadoPermanente = localStorage.getItem('GOB_Gobernanta_SILENCIADO') === 'true';
 
     var intervaloAlarmaRepetida = null;
     var tiempoLimiteAlarma = null;
@@ -641,7 +641,7 @@
     /* CONTROL DE AUDIO Y ALARMAS DE NOTIFICACIÓN */
     function toggleSilencioPermanente() {
       silenciadoPermanente = !silenciadoPermanente;
-      localStorage.setItem('GOB_GERENCIA_SILENCIADO', silenciadoPermanente);
+      localStorage.setItem('GOB_GOBERNANTA_SILENCIADO', silenciadoPermanente);
       actualizarBotonSilencio();
       if (silenciadoPermanente) detenerAlarmaContinua();
     }
@@ -723,7 +723,7 @@
     }
 
     function actualizarTituloContador(cantidad) {
-      var tituloBase = "Control Gerencia - Gobernanta";
+      var tituloBase = "Control Gobernanta";
       if (cantidad > 0) {
         document.title = "(" + cantidad + ") 🚨 " + tituloBase;
       } else {
@@ -777,7 +777,7 @@
             }
           }
         })
-        .catch(err => console.log("Error consultando Gobernanta Gerencia:", err));
+        .catch(err => console.log("Error consultando Gobernanta :", err));
     }
 
     function convertirTextoALinks(texto) {
