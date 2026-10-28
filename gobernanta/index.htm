@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Control de Novedades - Panel Gobernanta</title>
+  
+  <!-- Manifest para PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8b5cf6">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --gobernanta-color: #8b5cf6;
+      --gobernanta-hover: #7c3aed;
+      --ap-color: #d97706;
+      --ap-bg: #fffbe6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    body { 
+      background-color: var(--bg); color: var(--text); 
+      padding: clamp(10px, 2.5vw, 24px); min-height: 100vh;
+    }
+
+    .container { width: 100%; max-width: 1100px; margin: 0 auto; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: clamp(12px, 2vw, 20px); background: var(--card-bg); 
+      padding: clamp(14px, 2.5vw, 20px); border-radius: 12px; border: 1px solid var(--border); 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 12px;
+    }
+
+    header h1 { font-size: clamp(1.1rem, 2vw, 1.4rem); color: #1e293b; font-weight: 800; }
+
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .shift-panel {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;
+      padding: clamp(14px, 2.5vw, 20px); margin-bottom: clamp(14px, 2.5vw, 20px); text-align: center;
+    }
+
+    .shift-timer { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: #1e40af; margin: 8px 0; font-family: monospace; }
+
+    .btn-shift {
+      width: 100%; max-width: 450px; background-color: var(--primary); color: white; border: none; 
+      padding: clamp(12px, 2vw, 14px); border-radius: 8px; font-weight: 700; 
+      font-size: clamp(0.88rem, 1.4vw, 1rem); cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+    }
+    .btn-shift.active { background-color: var(--danger); }
+    .btn-shift:active { transform: scale(0.99); }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: clamp(10px, 2vw, 16px); margin-bottom: clamp(14px, 2.5vw, 20px);
+    }
+
+    .metric-card {
+      background: var(--card-bg); border-radius: 12px; padding: clamp(14px, 2vw, 18px);
+      border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .metric-card .title { font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-card .value { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 900; color: #0f172a; line-height: 1; }
+    .metric-card .subtitle { font-size: 0.78rem; color: #64748b; margin-top: 6px; font-weight: 600; }
+
+    .metric-card.warning { border-left: 8px solid #b45309; background: #fffdf5; }
+    .metric-card.warning .value { color: #b45309; }
+
+    .metric-card.success { border-left: 8px solid #15803d; background: #f0fdf4; }
+    .metric-card.success .value { color: #15803d; }
+
+    .metric-card.muted { border-left: 8px solid #475569; background: #f8fafc; }
+
+    .tabs-container {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; 
+      margin-bottom: clamp(14px, 2.5vw, 20px); background: var(--card-bg); padding: 8px; 
+      border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .tab-btn {
+      width: 100%; padding: clamp(10px, 1.5vw, 12px); border: none; border-radius: 8px;
+      background: #f1f5f9; color: #475569; font-size: clamp(0.78rem, 1.3vw, 0.88rem); font-weight: 700;
+      cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; 
+      gap: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+
+    .tab-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+    .tab-btn.active.tab-pendientes { background: #b45309 !important; color: #ffffff !important; box-shadow: 0 3px 8px rgba(180, 83, 9, 0.3); }
+    .tab-btn.active.tab-solucionados { background: #15803d !important; color: #ffffff !important; box-shadow: 0 3px 8px rgba(21, 128, 61, 0.3); }
+    .tab-btn.active.tab-historico { background: #334155 !important; color: #ffffff !important; box-shadow: 0 3px 8px rgba(51, 65, 85, 0.3); }
+    .tab-btn.active.tab-deposito { background: #0284c7 !important; color: #ffffff !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3); }
+
+    .tab-btn.tiene-envios {
+      background: #fef3c7 !important;
+      border: 1.5px solid #f59e0b !important;
+      color: #b45309 !important;
+    }
+    .tab-btn.tiene-envios #badge-tab-deposito {
+      background-color: #ef4444 !important;
+      color: #ffffff !important;
+      animation: pulseWarning 1.2s infinite;
+    }
+
+    .tab-badge { background: #cbd5e1; color: #334155; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
+    .tab-btn.active .tab-badge { background: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important; }
+
+    .form-crear-card {
+      display: none; background: var(--card-bg); border-radius: 12px; padding: clamp(14px, 2.5vw, 20px);
+      border: 2px solid var(--gobernanta-color); box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15); margin-bottom: clamp(14px, 2.5vw, 20px);
+    }
+    .form-crear-card h3 { font-size: 1.05rem; color: var(--gobernanta-color); margin-bottom: 12px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .input-form { width: 100%; padding: clamp(8px, 1.5vw, 10px) 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #fff; }
+
+    .filter-bar {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; 
+      margin-bottom: clamp(14px, 2.5vw, 20px); background: var(--card-bg); padding: clamp(12px, 2vw, 16px); 
+      border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03); align-items: end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+
+    .filter-input { width: 100%; padding: clamp(8px, 1.5vw, 10px) 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #fff; color: var(--text); }
+    .btn-reset { background: #e2e8f0; border: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #475569; cursor: pointer; height: 40px; }
+
+    .lista-notas { display: flex; flex-direction: column; gap: clamp(12px, 2vw, 16px); }
+
+    .card-nota {
+      background: var(--card-bg); border-radius: 12px; padding: clamp(14px, 2.5vw, 18px);
+      border: 1px solid var(--border); border-left: 8px solid var(--warning); box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
+      display: flex; flex-direction: column; gap: 10px; transition: all 0.2s;
+    }
+
+    .card-nota.pendiente { border-left-color: #d97706 !important; background: #fffdf5; border-top: 1px solid #fde68a; border-right: 1px solid #fde68a; border-bottom: 1px solid #fde68a; }
+    .card-nota.es-gobernanta { border-left-color: var(--gobernanta-color) !important; background: #faf5ff; }
+    
+    .card-nota.es-areas-publicas {
+      border-left-color: var(--ap-color) !important;
+      background: var(--ap-bg) !important;
+      border-top: 1px solid #fde68a;
+      border-right: 1px solid #fde68a;
+      border-bottom: 1px solid #fde68a;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+    }
+
+    .card-nota.solucionado { border-left-color: #16a34a !important; background: #f0fdf4; border-top: 1px solid #bbf7d0; border-right: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; }
+    .card-nota.finalizado { border-left-color: #64748b; opacity: 0.8; background: #f8fafc; }
+
+    .nota-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; gap: 10px; flex-wrap: wrap; }
+    .nota-title { font-size: clamp(0.95rem, 1.8vw, 1.05rem); font-weight: 800; color: #1e293b; }
+    
+    .badge-count { padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 0.78rem; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
+    .badge-count.pending { background: #b45309; color: #ffffff; box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35); animation: pulseWarning 2s infinite; }
+    .badge-count.ok { background: #15803d; color: #ffffff; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.35); }
+    .badge-count.final { background: #64748b; color: #ffffff; }
+
+    @keyframes pulseWarning { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    
+    .badge-origen { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; display: inline-block; }
+    .badge-origen.gob { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+    .badge-origen.mucama { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-origen.areas { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 800; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.15); }
+
+    .respuestas-container { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .respuesta-normal { background-color: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #3b82f6; padding: 8px 12px; border-radius: 8px; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .respuesta-header { font-size: 0.78rem; font-weight: 700; color: #2563eb; margin-bottom: 3px; }
+    .respuesta-body { font-size: 0.88rem; color: #334155; }
+
+    .respuesta-mariana {
+      background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 8px 12px;
+      margin-top: 4px; margin-bottom: 4px; border-radius: 6px; color: #7f1d1d; font-weight: 600;
+    }
+
+    .respuesta-gobernanta { 
+      background-color: #f3e8ff; border-left: 4px solid #9333ea; padding: 8px 12px; 
+      margin-top: 4px; margin-bottom: 4px; border-radius: 6px; color: #581c87; font-weight: 600; 
+    }
+
+    .respuesta-nosolucionado { background-color: #fef2f2; border: 1px solid #fca5a5; border-left: 4px solid #ef4444; padding: 8px 12px; border-radius: 8px; color: #991b1b; font-size: 0.88rem; font-weight: 600; }
+
+    .solucion-box { background: #dcfce7; border: 1.5px solid #86efac; color: #14532d; padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; word-break: break-word; }
+
+    .acciones-gobernanta { 
+      display: grid; grid-template-columns: minmax(200px, 2fr) auto auto; 
+      gap: 8px; align-items: center; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; 
+    }
+    .acciones-gobernanta input { width: 100%; padding: clamp(8px, 1.5vw, 10px) 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; }
+
+    .btn-gob { 
+      border: none; padding: clamp(10px, 1.5vw, 12px) 14px; border-radius: 8px; 
+      font-size: clamp(0.82rem, 1.3vw, 0.88rem); font-weight: 700; cursor: pointer; color: white; transition: opacity 0.2s;
+    }
+    .btn-gob:active { opacity: 0.85; }
+    .btn-gob.purple { background-color: var(--gobernanta-color); }
+    .btn-gob.blue { background-color: var(--primary); }
+    .btn-gob.green { background-color: #16a34a; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25); }
+    .btn-gob.red { background-color: var(--danger); }
+
+    .deposito-search-bar { 
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 12px; background: #ffffff; padding: clamp(12px, 2vw, 16px); 
+      border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+      margin-bottom: 20px; align-items: end;
+    }
+    .deposito-input { width: 100%; padding: clamp(8px, 1.5vw, 10px) 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+
+    .card-olvido { background: #ffffff; border: 1px solid #e2e8f0; border-left: 6px solid #f59e0b; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 8px; }
+    .card-olvido.entregado { background: #f1f5f9; border-color: #cbd5e1; border-left-color: #94a3b8; opacity: 0.65; }
+    .card-olvido.entregado .olvido-titulo { text-decoration: line-through; color: #64748b; }
+    .card-olvido.pendiente-envio { background: #fffdf5; border-left-color: #0284c7; border: 1px solid #bae6fd; }
+
+    .burbuja-deposito {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin-top: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      word-break: break-word;
+    }
+    .burbuja-deposito.finalizada {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #16a34a;
+      color: #14532d;
+      font-weight: 600;
+    }
+    .burbuja-deposito.reactivada {
+      background-color: #fffbe3;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      color: #92400e;
+      font-weight: 600;
+    }
+
+    .btn-entregado { background-color: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; align-self: flex-start; min-height: 42px; }
+    .badge-entregado { background: #e2e8f0; color: #475569; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; align-self: flex-start; }
+
+    .paginacion-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; background: var(--card-bg); padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 10px; }
+    .paginacion-info { font-size: 0.85rem; font-weight: 700; color: #64748b; }
+    .paginacion-botones { display: flex; gap: 8px; align-items: center; }
+    .btn-page { background: #f1f5f9; border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #334155; cursor: pointer; transition: all 0.2s; }
+    .btn-page:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
+    .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .loading { text-align: center; padding: 40px; color: #64748b; font-size: 0.95rem; }
+
+    @media (max-width: 640px) {
+      body { padding: 10px; }
+      header { flex-direction: column; align-items: stretch; text-align: center; }
+      .header-actions { width: 100%; flex-direction: column; }
+      .header-actions button { width: 100%; }
+      
+      .metrics-grid { grid-template-columns: 1fr; gap: 10px; }
+      .tabs-container { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .filter-bar { grid-template-columns: 1fr; }
+      
+      .acciones-gobernanta { grid-template-columns: 1fr; }
+      .filter-input, .acciones-gobernanta input, .input-form, .deposito-input, .btn-gob { 
+        font-size: 16px !important;
+      }
+      
+      .nota-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .paginacion-container { flex-direction: column; text-align: center; }
+      .paginacion-botones { width: 100%; justify-content: center; }
+      .deposito-search-bar { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>👑 Panel de Control - Gobernanta</h1>
+        <small id="fecha-gobernanta" style="color: #64748b;"></small>
+      </div>
+      <div class="header-actions">
+        <button class="btn-gob red" onclick="detenerAlarmaContinua()">🔕 Silenciar Alarma</button>
+        <button class="btn-gob purple" onclick="toggleFormNota()">➕ Crear Nota</button>
+        <button class="btn-gob blue" onclick="cargarNotasGobernanta()">🔄 Actualizar</button>
+      </div>
+    </header>
+
+    <div class="shift-panel">
+      <span style="font-size: 0.85rem; font-weight: 700; color: #1e3a8a;">MONITOREO DE TURNO DE TRABAJO</span>
+      <div id="timerDisplay" class="shift-timer">08:00:00</div>
+      <button type="button" id="btnShift" class="btn-shift" onclick="toggleTurno()">▶ INICIAR TURNO (8 HORAS)</button>
+      <div id="statusAlerts" style="font-size: 0.8rem; margin-top: 8px; color: #475569; font-weight: 600;">
+        Alarma multimedia bypass activa durante el turno.
+      </div>
+    </div>
+
+    <!-- Formulario de creación de nota adaptativo -->
+    <div id="formCrearNota" class="form-crear-card">
+      <h3>👑 Crear Nueva Solicitud de Gobernanta</h3>
+      <form id="formGobernantaNota">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Sector / Origen:</label>
+            <select id="gobSector" class="input-form" onchange="cambiarSectorFormGobernanta()" required>
+              <option value="MUCAMA">Mucama (Pisos / Habitaciones)</option>
+              <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupGobPiso">
+            <label id="labelGobPiso">Piso:</label>
+            <select id="gobPiso" class="input-form" required>
+              <option value="">Seleccionar Piso...</option>
+              <option value="2">Piso 2</option>
+              <option value="3">Piso 3</option>
+              <option value="4">Piso 4</option>
+              <option value="5">Piso 5</option>
+              <option value="6">Piso 6</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupGobHabitacion">
+            <label id="labelGobHabitacion">N° Habitación:</label>
+            <input type="text" id="gobHabitacion" class="input-form" placeholder="Ej: 305" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Detalle de la Solicitud:</label>
+          <textarea id="gobDetalle" class="input-form" rows="3" placeholder="Escriba la orden o solicitud requerida a Mantenimiento..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-reset" onclick="toggleFormNota()" style="height: auto;">Cancelar</button>
+          <button type="submit" class="btn-gob purple" id="btnEnviarGob">📤 Enviar a Mantenimiento</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card warning">
+        <div class="title">PENDIENTES DE SOLUCIÓN</div>
+        <div class="value" id="val-pendientes">0</div>
+        <div class="subtitle">Requieren atención de Mantenimiento</div>
+      </div>
+      <div class="metric-card success">
+        <div class="title">SOLUCIONADOS (POR REVISAR)</div>
+        <div class="value" id="val-solucionados">0</div>
+        <div class="subtitle">Listos para verificar y finalizar</div>
+      </div>
+      <div class="metric-card muted">
+        <div class="title">FINALIZADAS / ARCHIVADAS</div>
+        <div class="value" id="val-finalizadas">0</div>
+        <div class="subtitle">Histórico cerrado con éxito</div>
+      </div>
+    </div>
+
+    <div class="tabs-container">
+      <button class="tab-btn tab-pendientes active" onclick="cambiarPestana('PENDIENTE', this)">
+        <span>⚠️ Pendientes</span>
+        <span class="tab-badge" id="badge-tab-pendientes">0</span>
+      </button>
+      <button class="tab-btn tab-solucionados" onclick="cambiarPestana('SOLUCIONADO', this)">
+        <span>✔ Solucionados</span>
+        <span class="tab-badge" id="badge-tab-solucionados">0</span>
+      </button>
+      <button class="tab-btn tab-historico" onclick="cambiarPestana('FINALIZADO', this)">
+        <span>📁 Histórico</span>
+        <span class="tab-badge" id="badge-tab-finalizados">0</span>
+      </button>
+      <button class="tab-btn tab-deposito" onclick="cambiarPestana('DEPOSITO', this)">
+        <span id="texto-tab-deposito">📦 Depósito</span>
+        <span class="tab-badge" id="badge-tab-deposito">0</span>
+      </button>
+    </div>
+
+    <div id="vista-principal">
+      <div class="filter-bar">
+        <div class="filter-group search-group">
+          <label class="filter-label">Buscar</label>
+          <input type="text" id="buscador" class="filter-input" placeholder="🔍 Habitación, Origen, detalle..." oninput="resetearPaginaYRender()">
+        </div>
+        
+        <!-- Filtro por Sector -->
+        <div class="filter-group">
+          <label class="filter-label">Sector</label>
+          <select id="filtroSector" class="filter-input" onchange="actualizarSubfiltroUbicacion()">
+            <option value="">🏢 Todos los Sectores</option>
+            <option value="MUCAMA">Mucamas</option>
+            <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+          </select>
+        </div>
+
+        <!-- Filtro Dinámico de Ubicación/Piso -->
+        <div class="filter-group">
+          <label class="filter-label" id="labelUbicacion">Ubicación / Piso</label>
+          <select id="filtroUbicacion" class="filter-input" onchange="resetearPaginaYRender()">
+            <option value="">📍 Todas las Ubicaciones</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Día</label>
+          <input type="date" id="filtroDia" class="filter-input" onchange="filtrarPorDia(this.value)">
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Mes</label>
+          <input type="month" id="filtroMes" class="filter-input" onchange="filtrarPorMes(this.value)">
+        </div>
+
+        <button class="btn-reset" onclick="limpiarFiltros()">Limpiar</button>
+      </div>
+
+      <div id="contenedorNotasGobernanta" class="lista-notas">
+        <div class="loading">Cargando tablero...</div>
+      </div>
+
+      <div id="barPaginacion" class="paginacion-container" style="display: none;">
+        <div class="paginacion-info" id="infoPaginacion">Página 1 de 1</div>
+        <div class="paginacion-botones">
+          <button class="btn-page" id="btnPrevPage" onclick="cambiarPagina(-1)">◀ Anterior</button>
+          <button class="btn-page" id="btnNextPage" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="vista-deposito" style="display: none;">
+      <div class="deposito-search-bar">
+        <div>
+          <label style="font-size:0.78rem; font-weight:700; color:#475569; display:block; margin-bottom:4px; text-transform:uppercase;">🔍 Buscar por Apellido o Detalle</label>
+          <input type="text" id="deposito-buscar-apellido" class="deposito-input" placeholder="Escriba el apellido del pasajero..." oninput="buscarEnDeposito()">
+        </div>
+        
+        <div>
+          <label style="font-size:0.78rem; font-weight:700; color:#475569; display:block; margin-bottom:4px; text-transform:uppercase;">📅 Fecha de Registro</label>
+          <input type="date" id="deposito-buscar-fecha" class="deposito-input" onchange="buscarEnDeposito()">
+        </div>
+
+        <button class="btn-reset" onclick="limpiarBusquedaDeposito()">Limpiar</button>
+      </div>
+
+      <div id="lista-deposito-olvidos">
+        <div style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 600;">
+          📦 No hay objetos pendientes de envío o depósito.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZ947xY4ByH8CTzXA9EM_D8FH-S-h6yDlkeTF8B9U3UhuW814qePa65fGhgKC4mDVW/exec";
+    var novedadesLocales = [];
+    var todasNovedadesGeneral = []; 
+    var estadoPestanaActiva = "PENDIENTE";
+    
+    var paginaActual = 1;
+    var NOTAS_POR_PAGINA = 15;
+
+    var DURACION_TURNO_SEGUNDOS = 8 * 3600;
+    var ROL_ACTUAL = "GOBERNANTA";
+    var timerInterval = null;
+    var pollingInterval = null;
+    var turnoActivo = false;
+    var timestampInicioServidor = null;
+    
+    var idsNotasConocidas = new Set();
+    var primeraCargaRealizada = false;
+
+    var audioCtx = null;
+    var audioHTML5 = null;
+    var audioDesbloqueado = false;
+
+    var intervaloAlarmaRepetida = null;
+    var tiempoLimiteAlarma = null;
+
+    var WAV_SIREN_BASE64 = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFb3mCiI14eIJ4dXZ0cHRvdHB2en+CgoSEhIWFhoeIiYqLjI2Oj5CSk5WVl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tc=";
+
+    function normalizarTexto(str) {
+      if (!str) return '';
+      return str.toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+    }
+
+    function inicializarCanalMultimedia() {
+      if (!audioHTML5) {
+        audioHTML5 = new Audio(WAV_SIREN_BASE64);
+        audioHTML5.volume = 1.0;
+      }
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) {}
+
+      audioHTML5.play().then(function() {
+        audioHTML5.pause();
+        audioHTML5.currentTime = 0;
+        audioDesbloqueado = true;
+      }).catch(function(e) {});
+    }
+
+    ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(function(evt) {
+      window.addEventListener(evt, function() {
+        if (!audioDesbloqueado) inicializarCanalMultimedia();
+      }, { once: false });
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+      sincronizarTurnoConServidor();
+    });
+
+    function sincronizarTurnoConServidor() {
+      fetch(SCRIPT_URL + "?action=obtenerEstadoTurno&rol=" + ROL_ACTUAL)
+        .then(res => res.json())
+        .then(data => {
+          if (data.turnoActivo) {
+            timestampInicioServidor = parseInt(data.inicioTurno);
+            var ahora = new Date().getTime();
+            var segundosTranscurridos = Math.floor((ahora - timestampInicioServidor) / 1000);
+            var segundosRestantes = DURACION_TURNO_SEGUNDOS - segundosTranscurridos;
+
+            if (segundosRestantes > 0) {
+              iniciarMonitoreoLocal(segundosRestantes);
+            } else {
+              finalizarTurnoEnServidor();
+            }
+          } else {
+            apagarInterfazTurno();
+          }
+        })
+        .catch(err => console.log("Error al sincronizar turno:", err));
+    }
+
+    function toggleTurno() {
+      inicializarCanalMultimedia();
+
+      if (!turnoActivo) {
+        var params = new URLSearchParams({ action: "registrarInicioTurno", rol: ROL_ACTUAL });
+        fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+          .then(res => res.json())
+          .then(data => {
+            timestampInicioServidor = parseInt(data.inicioTurno);
+            iniciarMonitoreoLocal(DURACION_TURNO_SEGUNDOS);
+          });
+      } else {
+        finalizarTurnoEnServidor();
+      }
+    }
+
+    function iniciarMonitoreoLocal(segundosRestantes) {
+      var btn = document.getElementById('btnShift');
+      var status = document.getElementById('statusAlerts');
+
+      turnoActivo = true;
+      btn.innerText = "⏹ FINALIZAR TURNO PREMATURAMENTE";
+      btn.classList.add('active');
+      status.innerText = "🟢 Turno activo: Monitoreo continuo de respuestas y novedades.";
+      status.style.color = "#166534";
+
+      renderizarTiempo(segundosRestantes);
+
+      if (timerInterval) clearInterval(timerInterval);
+      if (pollingInterval) clearInterval(pollingInterval);
+
+      timerInterval = setInterval(actualizarCronometroServidor, 1000);
+      pollingInterval = setInterval(consultarServidor, 8000);
+      consultarServidor();
+    }
+
+    function actualizarCronometroServidor() {
+      if (!timestampInicioServidor) return;
+
+      var ahora = new Date().getTime();
+      var segundosTranscurridos = Math.floor((ahora - timestampInicioServidor) / 1000);
+      var segundosRestantes = DURACION_TURNO_SEGUNDOS - segundosTranscurridos;
+
+      if (segundosRestantes <= 0) {
+        finalizarTurnoEnServidor();
+        alert("⏰ Han finalizado las 8 horas de tu turno de trabajo.");
+        return;
+      }
+
+      renderizarTiempo(segundosRestantes);
+    }
+
+    function renderizarTiempo(segundos) {
+      var hrs = Math.floor(segundos / 3600);
+      var mins = Math.floor((segundos % 3600) / 60);
+      var segs = segundos % 60;
+
+      document.getElementById('timerDisplay').innerText = 
+        (hrs < 10 ? "0" + hrs : hrs) + ":" +
+        (mins < 10 ? "0" + mins : mins) + ":" +
+        (segs < 10 ? "0" + segs : segs);
+    }
+
+    function finalizarTurnoEnServidor() {
+      var params = new URLSearchParams({ action: "registrarFinTurno", rol: ROL_ACTUAL });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+      apagarInterfazTurno();
+    }
+
+    function apagarInterfazTurno() {
+      turnoActivo = false;
+      timestampInicioServidor = null;
+      detenerAlarmaContinua();
+      
+      if (timerInterval) clearInterval(timerInterval);
+      if (pollingInterval) clearInterval(pollingInterval);
+
+      var btn = document.getElementById('btnShift');
+      var status = document.getElementById('statusAlerts');
+
+      document.getElementById('timerDisplay').innerText = "08:00:00";
+      if (btn) {
+        btn.innerText = "▶ INICIAR TURNO (8 HORAS)";
+        btn.classList.remove('active');
+      }
+      if (status) {
+        status.innerText = "🔴 Turno inactivo. Monitoreo detenido.";
+        status.style.color = "#991b1b";
+      }
+    }
+
+    function reproducirSonidoAlerta() {
+      if (audioHTML5) {
+        audioHTML5.currentTime = 0;
+        audioHTML5.play().catch(function(e) {});
+      }
+
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        var ahora = audioCtx.currentTime;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1200, ahora);
+        osc.frequency.setValueAtTime(800, ahora + 0.25);
+        osc.frequency.setValueAtTime(1200, ahora + 0.5);
+        osc.frequency.setValueAtTime(800, ahora + 0.75);
+
+        gain.gain.setValueAtTime(1.0, ahora);
+        gain.gain.exponentialRampToValueAtTime(0.001, ahora + 1.0);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(ahora);
+        osc.stop(ahora + 1.0);
+      } catch (e) {}
+    }
+
+    function ejecutarPulsoAlerta() {
+      if ("vibrate" in navigator) navigator.vibrate([1000, 300, 1000]);
+      reproducirSonidoAlerta();
+    }
+
+    function activarAlarmaContinua() {
+      if (!turnoActivo || intervaloAlarmaRepetida !== null) return;
+
+      ejecutarPulsoAlerta();
+
+      intervaloAlarmaRepetida = setInterval(function() {
+        ejecutarPulsoAlerta();
+      }, 3500);
+
+      tiempoLimiteAlarma = setTimeout(function() {
+        detenerAlarmaContinua();
+      }, 300000);
+    }
+
+    function detenerAlarmaContinua() {
+      if (intervaloAlarmaRepetida !== null) {
+        clearInterval(intervaloAlarmaRepetida);
+        intervaloAlarmaRepetida = null;
+      }
+      if (tiempoLimiteAlarma !== null) {
+        clearTimeout(tiempoLimiteAlarma);
+        tiempoLimiteAlarma = null;
+      }
+    }
+
+    function actualizarTituloContador(cantidad) {
+      var tituloBase = "Control de Novedades - Panel Gobernanta";
+      if (cantidad > 0) {
+        document.title = "(" + cantidad + ") 🚨 " + tituloBase;
+        if ('setAppBadge' in navigator) navigator.setAppBadge(cantidad).catch(e => console.log(e));
+      } else {
+        document.title = tituloBase;
+        if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(e => console.log(e));
+      }
+    }
+
+    function consultarServidor() {
+      cargarNovedadesGeneralParaDeposito();
+
+      fetch(SCRIPT_URL + "?action=getNovedadesGobernancia")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.novedades) {
+            var hayNuevaNotaDeMucamaOAreas = false;
+            
+            data.novedades.forEach(n => {
+              if (!idsNotasConocidas.has(n.rowIndex)) {
+                idsNotasConocidas.add(n.rowIndex);
+                if (primeraCargaRealizada && n.estado === 'PENDIENTE') {
+                  var origen = normalizarTexto(n.mucama);
+                  if (origen !== 'GOBERNANTA') {
+                    hayNuevaNotaDeMucamaOAreas = true;
+                  }
+                }
+              }
+            });
+
+            primeraCargaRealizada = true;
+            novedadesLocales = data.novedades;
+
+            var countPend = novedadesLocales.filter(n => n.estado === 'PENDIENTE').length;
+            actualizarTituloContador(countPend);
+
+            // SOLO RE-RENDERIZAR SI EL USUARIO NO ESTÁ ESCRIBIENDO
+            var elementoActivo = document.activeElement;
+            var usuarioEscribiendo = elementoActivo && (
+              elementoActivo.tagName === 'INPUT' || 
+              elementoActivo.tagName === 'TEXTAREA' || 
+              elementoActivo.tagName === 'SELECT'
+            ) && elementoActivo.closest('#contenedorNotasGobernanta');
+
+            if (!usuarioEscribiendo) {
+              renderNotasGobernanta();
+            }
+
+            if (hayNuevaNotaDeMucamaOAreas && turnoActivo) {
+              detenerAlarmaContinua();
+              activarAlarmaContinua();
+            }
+          }
+        })
+        .catch(err => console.log("Error al consultar novedades en Gobernanta:", err));
+    }
+
+    function convertirTextoALinks(texto) {
+      if (!texto) return '';
+      var regexUrl = /((?:https?|ftp|blob):\/\/[^\s<]+|(?:www\.)[^\s<]+)/gi;
+      return texto.replace(regexUrl, function(url) {
+        var href = url;
+        if (url.toLowerCase().startsWith('www.')) href = 'http://' + url;
+        return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600; word-break: break-all;">' + url + '</a>';
+      });
+    }
+
+    window.onload = function() {
+      cargarNotasGobernanta();
+      cambiarSectorFormGobernanta();
+    };
+
+    function toggleFormNota() {
+      var box = document.getElementById('formCrearNota');
+      box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function cambiarSectorFormGobernanta() {
+      var sector = document.getElementById('gobSector').value;
+      var comboPiso = document.getElementById('gobPiso');
+      var labelPiso = document.getElementById('labelGobPiso');
+      var inputHab = document.getElementById('gobHabitacion');
+      var groupHab = document.getElementById('groupGobHabitacion');
+
+      if (sector === 'AREAS_PUBLICAS') {
+        labelPiso.innerText = 'Área Pública / Sector:';
+        comboPiso.innerHTML = `
+          <option value="">Seleccionar Área...</option>
+          <option value="Primer piso">Primer piso</option>
+          <option value="Planta baja">Planta baja</option>
+          <option value="Caja trebejos">Caja trebejos</option>
+          <option value="Restó Flotante">Restó Flotante</option>
+          <option value="Climatizada">Climatizada</option>
+          <option value="Gym">Gym</option>
+          <option value="Bar/restaurante">Bar/restaurante</option>
+          <option value="Parque">Parque</option>
+        `;
+        groupHab.style.display = 'none';
+        inputHab.required = false;
+        inputHab.value = 'Área Pública';
+      } else {
+        labelPiso.innerText = 'Piso:';
+        comboPiso.innerHTML = `
+          <option value="">Seleccionar Piso...</option>
+          <option value="2">Piso 2</option>
+          <option value="3">Piso 3</option>
+          <option value="4">Piso 4</option>
+          <option value="5">Piso 5</option>
+          <option value="6">Piso 6</option>
+          <option value="FLOTANTE">FLOTANTE</option>
+        `;
+        groupHab.style.display = 'flex';
+        inputHab.required = true;
+        if (inputHab.value === 'Área Pública') inputHab.value = '';
+      }
+    }
+
+    function cambiarPestana(nuevoEstado, elemento) {
+      estadoPestanaActiva = nuevoEstado;
+      paginaActual = 1;
+      
+      var botones = document.querySelectorAll('.tab-btn');
+      botones.forEach(btn => btn.classList.remove('active'));
+      elemento.classList.add('active');
+
+      if (nuevoEstado === 'DEPOSITO') {
+        document.getElementById('vista-principal').style.display = 'none';
+        document.getElementById('vista-deposito').style.display = 'block';
+        buscarEnDeposito();
+      } else {
+        document.getElementById('vista-principal').style.display = 'block';
+        document.getElementById('vista-deposito').style.display = 'none';
+        renderNotasGobernanta();
+      }
+    }
+
+    function resetearPaginaYRender() {
+      paginaActual = 1;
+      renderNotasGobernanta();
+    }
+
+    function actualizarSubfiltroUbicacion() {
+      var sector = document.getElementById('filtroSector').value;
+      var comboUbicacion = document.getElementById('filtroUbicacion');
+      var labelUbicacion = document.getElementById('labelUbicacion');
+
+      comboUbicacion.innerHTML = '';
+
+      if (sector === 'MUCAMA') {
+        labelUbicacion.innerText = 'Piso';
+        comboUbicacion.innerHTML = `
+          <option value="">🏢 Todos los Pisos</option>
+          <option value="2">Piso 2</option>
+          <option value="3">Piso 3</option>
+          <option value="4">Piso 4</option>
+          <option value="5">Piso 5</option>
+          <option value="6">Piso 6</option>
+        `;
+      } else if (sector === 'AREAS_PUBLICAS') {
+        labelUbicacion.innerText = 'Área Específica';
+        comboUbicacion.innerHTML = `
+          <option value="">🏛️ Todas las Áreas</option>
+          <option value="Primer piso">Primer piso</option>
+          <option value="Planta baja">Planta baja</option>
+          <option value="Caja trebejos">Caja trebejos</option>
+          <option value="Restó Flotante">Restó Flotante</option>
+          <option value="Climatizada">Climatizada</option>
+          <option value="Gym">Gym</option>
+          <option value="Bar/restaurante">Bar/restaurante</option>
+          <option value="Parque">Parque</option>
+        `;
+      } else {
+        labelUbicacion.innerText = 'Ubicación / Piso';
+        comboUbicacion.innerHTML = `<option value="">📍 Todas las Ubicaciones</option>`;
+      }
+
+      resetearPaginaYRender();
+    }
+
+    document.getElementById('formGobernantaNota').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      var sector = document.getElementById('gobSector').value;
+      var piso = document.getElementById('gobPiso').value;
+      var habitacion = document.getElementById('gobHabitacion').value;
+      var detalle = document.getElementById('gobDetalle').value;
+
+      var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+      var nextIndex = novedadesLocales.length > 0 ? Math.max(...novedadesLocales.map(n => n.rowIndex || 0)) + 1 : 2;
+
+      var origenFirma = (sector === 'AREAS_PUBLICAS') ? "ÁREAS PÚBLICAS" : "GOBERNANTA";
+      var habFinal = (sector === 'AREAS_PUBLICAS') ? (piso || "Áreas Públicas") : habitacion;
+
+      var nuevaNotaLocal = {
+        rowIndex: nextIndex, fecha: fechaAhora, mucama: origenFirma, piso: piso, habitacion: habFinal,
+        detalle: detalle, estado: "PENDIENTE", historialRespuestas: "", detalleSolucion: "", solucionadoPor: ""
+      };
+
+      idsNotasConocidas.add(nextIndex);
+      novedadesLocales.unshift(nuevaNotaLocal);
+      paginaActual = 1;
+      renderNotasGobernanta();
+
+      document.getElementById('formGobernantaNota').reset();
+      cambiarSectorFormGobernanta();
+      toggleFormNota();
+
+      var params = new URLSearchParams({
+        action: "guardarNovedadMucama", mucama: origenFirma, piso: piso, habitacion: habFinal, detalle: detalle
+      });
+
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    });
+
+    function filtrarPorDia(val) {
+      if (val) document.getElementById('filtroMes').value = '';
+      resetearPaginaYRender();
+    }
+
+    function filtrarPorMes(val) {
+      if (val) document.getElementById('filtroDia').value = '';
+      resetearPaginaYRender();
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('buscador').value = '';
+      document.getElementById('filtroSector').value = '';
+      document.getElementById('filtroDia').value = '';
+      document.getElementById('filtroMes').value = '';
+      actualizarSubfiltroUbicacion();
+    }
+
+    function cargarNotasGobernanta() {
+      document.getElementById('fecha-gobernanta').innerText = "Actualizado: " + new Date().toLocaleString('es-ES');
+      consultarServidor();
+    }
+
+    function cargarNovedadesGeneralParaDeposito() {
+      fetch(SCRIPT_URL + "?action=getNovedades")
+        .then(res => res.json())
+        .then(data => {
+          var activas = data.activas || [];
+          var historico = data.historico || [];
+          todasNovedadesGeneral = activas.concat(historico);
+          
+          actualizarContadorPestanaDeposito();
+          if (estadoPestanaActiva === 'DEPOSITO') {
+            buscarEnDeposito();
+          }
+        })
+        .catch(err => console.error("Error cargando depósito:", err));
+    }
+
+    function actualizarContadorPestanaDeposito() {
+      var countEnvios = todasNovedadesGeneral.filter(function(n) {
+        var esOlvido = n.categoria && n.categoria.toLowerCase() === 'olvidos';
+        var detalleLower = (n.detalle || '').toLowerCase();
+        
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
+        
+        var estaPendienteEnvio = !estaEntregado && (
+          detalleLower.indexOf("pendiente de") !== -1 || 
+          detalleLower.indexOf("reactivada") !== -1 || 
+          detalleLower.indexOf("guía") !== -1 || 
+          detalleLower.indexOf("guia") !== -1 ||
+          detalleLower.indexOf("envío") !== -1 ||
+          detalleLower.indexOf("envio") !== -1
+        );
+
+        return esOlvido && estaPendienteEnvio;
+      }).length;
+
+      var badge = document.getElementById('badge-tab-deposito');
+      var textoTab = document.getElementById('texto-tab-deposito');
+      var btnTab = document.querySelector('.tab-deposito');
+
+      if (badge) badge.innerText = countEnvios;
+
+      if (btnTab) {
+        if (countEnvios > 0) {
+          btnTab.classList.add('tiene-envios');
+          if (textoTab) textoTab.innerText = "📦 PENDIENTE DE ENVÍO";
+        } else {
+          btnTab.classList.remove('tiene-envios');
+          if (textoTab) textoTab.innerText = "📦 Depósito";
+        }
+      }
+    }
+
+    function formatearHistorialRespuestas(historialRaw) {
+      if (!historialRaw) return '';
+      var lineas = historialRaw.split('\n');
+      var html = '<div class="respuestas-container"><strong style="font-size:0.8rem; color:#64748b;">Historial de Comentarios:</strong>';
+
+      lineas.forEach(linea => {
+        var l = linea.trim();
+        if (!l) return;
+        var esGobernanta = l.toUpperCase().includes('GOBERNANTA');
+        var esMariana = l.toUpperCase().includes('MARIANA');
+        var esNoSolucionado = l.toUpperCase().includes('NO SOLUCIONADO');
+
+        if (esNoSolucionado) {
+          html += `<div class="respuesta-nosolucionado">${convertirTextoALinks(l)}</div>`;
+        } else if (esMariana) {
+          html += `<div class="respuesta-mariana">${convertirTextoALinks(l)}</div>`;
+        } else if (esGobernanta) {
+          html += `<div class="respuesta-gobernanta">${convertirTextoALinks(l)}</div>`;
+        } else {
+          var match = l.match(/^↳?\s*\[(.*?)\]:\s*(.*)$/);
+          if (match) {
+            html += `<div class="respuesta-normal"><div class="respuesta-header">💬 ${match[1]}</div><div class="respuesta-body">${convertirTextoALinks(match[2])}</div></div>`;
+          } else {
+            html += `<div class="respuesta-normal"><div class="respuesta-body">${convertirTextoALinks(l)}</div></div>`;
+          }
+        }
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function parsearDetalleConRespuestas(detalleCompleto) {
+      if (!detalleCompleto) return '';
+      
+      var lineas = detalleCompleto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l !== ''; });
+      var html = '<div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin: 8px 0;">';
+
+      var esPrimeraLinea = true;
+
+      lineas.forEach(function(linea) {
+        var textoFormateado = convertirTextoALinks(linea);
+        var lUpper = linea.toUpperCase();
+
+        var esGobernanta = lUpper.includes('GOBERNANTA');
+        var esMariana = lUpper.includes('MARIANA');
+
+        var matchRespuesta = linea.match(/^↳?\s*\[(.*?)\]:\s*(.*)$/);
+        
+        if (esPrimeraLinea && (linea.startsWith('📌') || !linea.startsWith('↳'))) {
+          esPrimeraLinea = false;
+          if (linea.startsWith('📌')) {
+            html += '<div style="font-weight: 800; font-size: 1rem; color: #0f172a; margin-bottom: 2px;">' + textoFormateado + '</div>';
+          } else {
+            html += '<div style="font-weight: 700; font-size: 0.95rem; color: #1e293b;">' + textoFormateado + '</div>';
+          }
+          return;
+        }
+
+        esPrimeraLinea = false;
+
+        if (esMariana && linea.startsWith('↳')) {
+          html += '<div class="respuesta-mariana">' + textoFormateado + '</div>';
+        }
+        else if (esGobernanta && linea.startsWith('↳')) {
+          html += '<div class="respuesta-gobernanta">' + textoFormateado + '</div>';
+        }
+        else if (matchRespuesta) {
+          var cabecera = matchRespuesta[1];
+          var cuerpo = matchRespuesta[2];
+          html += '<div class="respuesta-normal">';
+          html += '  <div class="respuesta-header">💬 ' + cabecera + '</div>';
+          html += '  <div class="respuesta-body">' + convertirTextoALinks(cuerpo) + '</div>';
+          html += '</div>';
+        }
+        else if (linea.indexOf('✅ [FINALIZADA') !== -1 || linea.indexOf('✅ [ENTREGADO') !== -1) {
+          html += '<div class="burbuja-deposito finalizada">' + textoFormateado + '</div>';
+        }
+        else if (linea.indexOf('📦 [REACTIVADA') !== -1 || linea.indexOf('REACTIVADA PARA ENVÍO') !== -1) {
+          html += '<div class="burbuja-deposito reactivada">' + textoFormateado + '</div>';
+        }
+        else {
+          html += '<div style="font-size: 0.92rem; color: #334155; margin-bottom: 4px;">' + textoFormateado + '</div>';
+        }
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    function cambiarPagina(delta) {
+      paginaActual += delta;
+      renderNotasGobernanta();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderNotasGobernanta() {
+      // GUARDAR BORRADORES TEMPORALES DE LOS INPUTS ANTES DE RECREAR EL DOM
+      var borradoresActuales = {};
+      document.querySelectorAll('[id^="respGob_"]').forEach(function(inp) {
+        if (inp.value) {
+          borradoresActuales[inp.id] = inp.value;
+        }
+      });
+
+      var contenedor = document.getElementById('contenedorNotasGobernanta');
+      var barPaginacion = document.getElementById('barPaginacion');
+      
+      var countPendientes = novedadesLocales.filter(n => n.estado === 'PENDIENTE').length;
+      var countSolucionados = novedadesLocales.filter(n => n.estado === 'SOLUCIONADO').length;
+      var countFinalizadas = novedadesLocales.filter(n => n.estado === 'FINALIZADO').length;
+
+      document.getElementById('val-pendientes').innerText = countPendientes;
+      document.getElementById('val-solucionados').innerText = countSolucionados;
+      document.getElementById('val-finalizadas').innerText = countFinalizadas;
+
+      document.getElementById('badge-tab-pendientes').innerText = countPendientes;
+      document.getElementById('badge-tab-solucionados').innerText = countSolucionados;
+      document.getElementById('badge-tab-finalizados').innerText = countFinalizadas;
+
+      actualizarContadorPestanaDeposito();
+
+      var txtBusqueda = normalizarTexto(document.getElementById('buscador').value);
+      var selSector = document.getElementById('filtroSector').value;
+      var selUbicacion = document.getElementById('filtroUbicacion').value;
+      var valDia = document.getElementById('filtroDia').value;
+      var valMes = document.getElementById('filtroMes').value;
+
+      var filtradas = novedadesLocales.filter(n => {
+        var coincideEstado = n.estado === estadoPestanaActiva;
+        
+        var habNorm = normalizarTexto(n.habitacion);
+        var mucamaNorm = normalizarTexto(n.mucama);
+        var detalleNorm = normalizarTexto(n.detalle);
+
+        var coincideTexto = !txtBusqueda || 
+                            habNorm.includes(txtBusqueda) || 
+                            mucamaNorm.includes(txtBusqueda) || 
+                            detalleNorm.includes(txtBusqueda);
+
+        // Validación de Sector
+        var coincideSector = true;
+        var esAreasPublicas = mucamaNorm.includes('AREAS PUBLICAS') || 
+                              mucamaNorm.includes('AREA PUBLICA') || 
+                              habNorm.includes('RESTO') || 
+                              habNorm.includes('FLOTANTE') ||
+                              habNorm.includes('CLIMATIZADA') ||
+                              habNorm.includes('GYM') ||
+                              habNorm.includes('TREBEJOS') ||
+                              habNorm.includes('PARQUE');
+        
+        if (selSector === 'MUCAMA') {
+          coincideSector = !esAreasPublicas && mucamaNorm !== 'GOBERNANTA';
+        } else if (selSector === 'AREAS_PUBLICAS') {
+          coincideSector = esAreasPublicas;
+        }
+
+        // Validación de Piso / Área específica
+        var coincideUbicacion = true;
+        if (selUbicacion !== '') {
+          var ubNorm = normalizarTexto(selUbicacion);
+          var pisoNorm = normalizarTexto(n.piso);
+
+          coincideUbicacion = (pisoNorm === ubNorm || habNorm === ubNorm) ||
+                             (pisoNorm.includes(ubNorm) || ubNorm.includes(pisoNorm)) ||
+                             (habNorm.includes(ubNorm) || ubNorm.includes(habNorm));
+        }
+
+        var coincideFecha = true;
+        if (n.fecha) {
+          var partes = n.fecha.split(" ")[0].split("/");
+          if (partes.length === 3) {
+            var fechaISO = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+            var mesISO = `${partes[2]}-${partes[1].padStart(2, '0')}`;
+            if (valDia) coincideFecha = (fechaISO === valDia);
+            else if (valMes) coincideFecha = (mesISO === valMes);
+          }
+        }
+
+        return coincideEstado && coincideTexto && coincideSector && coincideUbicacion && coincideFecha;
+      });
+
+      var totalNotas = filtradas.length;
+
+      if (totalNotas === 0) {
+        contenedor.innerHTML = '<div class="loading">No hay novedades en esta sección.</div>';
+        barPaginacion.style.display = 'none';
+        return;
+      }
+
+      var totalPaginas = Math.ceil(totalNotas / NOTAS_POR_PAGINA);
+      if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+      if (paginaActual < 1) paginaActual = 1;
+
+      var inicio = (paginaActual - 1) * NOTAS_POR_PAGINA;
+      var fin = inicio + NOTAS_POR_PAGINA;
+      var notasPagina = filtradas.slice(inicio, fin);
+
+      var html = '';
+      notasPagina.forEach(n => {
+        var badgeClass = 'pending';
+        if (n.estado === 'SOLUCIONADO') badgeClass = 'ok';
+        if (n.estado === 'FINALIZADO') badgeClass = 'final';
+
+        var mucamaNorm = normalizarTexto(n.mucama);
+        var habNorm = normalizarTexto(n.habitacion);
+
+        var esAP = mucamaNorm.includes('AREAS PUBLICAS') || 
+                   mucamaNorm.includes('AREA PUBLICA') || 
+                   habNorm.includes('RESTO') || 
+                   habNorm.includes('FLOTANTE') ||
+                   habNorm.includes('CLIMATIZADA') ||
+                   habNorm.includes('GYM') ||
+                   habNorm.includes('TREBEJOS') ||
+                   habNorm.includes('PARQUE');
+
+        var badgeOrigen = '';
+        var cardExtraClass = '';
+
+        if (mucamaNorm === 'GOBERNANTA') {
+          badgeOrigen = '<span class="badge-origen gob">👑 GOBERNANTA</span>';
+          cardExtraClass = 'es-gobernanta';
+        } else if (esAP) {
+          badgeOrigen = '<span class="badge-origen areas">🏛️ ÁREAS PÚBLICAS</span>';
+          cardExtraClass = 'es-areas-publicas';
+        } else {
+          badgeOrigen = `<span class="badge-origen mucama">🧹 MUCAMA: ${n.mucama}</span>`;
+        }
+
+        var respuestasHtml = formatearHistorialRespuestas(n.historialRespuestas);
+
+        var solucionHtml = '';
+        if (n.detalleSolucion && n.estado === 'SOLUCIONADO') {
+          solucionHtml = `<div class="solucion-box"><strong>Solución Mantenimiento (${n.solucionadoPor}):</strong> ${convertirTextoALinks(n.detalleSolucion)}</div>`;
+        }
+
+        html += `
+          <div class="card-nota ${n.estado.toLowerCase()} ${cardExtraClass}">
+            <div class="nota-header">
+              <div>
+                <span class="nota-title">Piso/Zona: ${n.piso} — Habitación/Ubicación: ${n.habitacion}</span>
+                <div style="margin-top:2px;">${badgeOrigen}</div>
+              </div>
+              <span class="badge-count ${badgeClass}">${n.estado}</span>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b;">Fecha: ${n.fecha}</div>
+            <div style="font-size:0.9rem; color:#334155; line-height:1.4;">${convertirTextoALinks(n.detalle).replace(/\n/g, '<br>')}</div>
+
+            ${solucionHtml}
+            ${respuestasHtml}
+
+            <div class="acciones-gobernanta">
+              ${n.estado !== 'FINALIZADO' ? `
+                <input type="text" id="respGob_${n.rowIndex}" placeholder="Escribir consulta o nota en azul...">
+                <button class="btn-gob blue" onclick="responderGobernanta(${n.rowIndex})">📘 Responder</button>
+              ` : ''}
+
+              ${n.estado === 'SOLUCIONADO' ? `
+                <button class="btn-gob red" onclick="cambiarEstado(${n.rowIndex}, 'PENDIENTE')">🔄 Reactivar Pendiente</button>
+                <button class="btn-gob green" onclick="cambiarEstado(${n.rowIndex}, 'FINALIZADO')">✔ Finalizar y Archivar</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      contenedor.innerHTML = html;
+
+      // RESTAURAR BORRADORES NO ENVIADOS
+      Object.keys(borradoresActuales).forEach(function(inputId) {
+        var elem = document.getElementById(inputId);
+        if (elem) {
+          elem.value = borradoresActuales[inputId];
+        }
+      });
+
+      barPaginacion.style.display = 'flex';
+      document.getElementById('infoPaginacion').innerText = `Página ${paginaActual} de ${totalPaginas} (Mostrando ${inicio + 1}–${Math.min(fin, totalNotas)} de ${totalNotas})`;
+      document.getElementById('btnPrevPage').disabled = (paginaActual === 1);
+      document.getElementById('btnNextPage').disabled = (paginaActual === totalPaginas);
+    }
+
+    function responderGobernanta(rowIndex) {
+      detenerAlarmaContinua();
+      var input = document.getElementById(`respGob_${rowIndex}`);
+      var texto = input ? input.value.trim() : '';
+      if (!texto) return alert('Por favor ingrese un mensaje.');
+
+      var nov = novedadesLocales.find(n => n.rowIndex === rowIndex);
+      if (nov) {
+        var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+        var nuevaLinea = `↳ [${fechaAhora} - GOBERNANTA]: ${texto}`;
+        nov.historialRespuestas = nov.historialRespuestas ? (nov.historialRespuestas + "\n" + nuevaLinea) : nuevaLinea;
+        renderNotasGobernanta();
+      }
+
+      var params = new URLSearchParams({ action: "agregarRespuestaGobernancia", rowIndex: rowIndex, firma: "GOBERNANTA", texto: texto, esGobernanta: "true" });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    }
+
+    function cambiarEstado(rowIndex, nuevoEstado) {
+      detenerAlarmaContinua();
+      var nov = novedadesLocales.find(n => n.rowIndex === rowIndex);
+      if (nov) {
+        var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+
+        if (nuevoEstado === 'PENDIENTE' && nov.estado === 'SOLUCIONADO') {
+          var tecnicoPrevio = nov.solucionadoPor || "TÉCNICO";
+          var arregloPrevio = nov.detalleSolucion || "Sin detalle";
+          var marcaReactivacion = `❌ [${fechaAhora} - NO SOLUCIONADO]: Reactivado por Gobernanta. Intentado previamente por ${tecnicoPrevio} ("${arregloPrevio}")`;
+          
+          nov.historialRespuestas = nov.historialRespuestas ? (nov.historialRespuestas + "\n" + marcaReactivacion) : marcaReactivacion;
+          
+          var paramsResp = new URLSearchParams({ action: "agregarRespuestaGobernancia", rowIndex: rowIndex, firma: "GOBERNANTA", texto: `❌ NO SOLUCIONADO: Reactivado. Intentado previamente por ${tecnicoPrevio} ("${arregloPrevio}")`, esGobernanta: "true" });
+          fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: paramsResp });
+
+          nov.detalleSolucion = "";
+          nov.solucionadoPor = "";
+        }
+
+        nov.estado = nuevoEstado;
+        renderNotasGobernanta();
+      }
+
+      var params = new URLSearchParams({ action: "cambiarEstadoGobernancia", rowIndex: rowIndex, nuevoEstado: nuevoEstado, usuario: "GOBERNANTA" });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    }
+
+    function limpiarBusquedaDeposito() {
+      document.getElementById('deposito-buscar-apellido').value = '';
+      document.getElementById('deposito-buscar-fecha').value = '';
+      buscarEnDeposito();
+    }
+
+    function buscarEnDeposito() {
+      var txtApellido = document.getElementById('deposito-buscar-apellido').value.toLowerCase().trim();
+      var valFecha = document.getElementById('deposito-buscar-fecha').value;
+      var container = document.getElementById('lista-deposito-olvidos');
+
+      var resultados = todasNovedadesGeneral.filter(function(item) {
+        var esOlvido = item.categoria && item.categoria.toLowerCase() === 'olvidos';
+        if (!esOlvido) return false;
+
+        var detalleLower = (item.detalle || '').toLowerCase();
+
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
+        
+        var estaPendienteEnvio = !estaEntregado && (
+          detalleLower.indexOf("pendiente de") !== -1 || 
+          detalleLower.indexOf("reactivada") !== -1 || 
+          detalleLower.indexOf("guía") !== -1 || 
+          detalleLower.indexOf("guia") !== -1 ||
+          detalleLower.indexOf("envío") !== -1 ||
+          detalleLower.indexOf("envio") !== -1
+        );
+
+        // SI YA FUE ENTREGADO, NO MOSTRAR EN LA LISTA DE PENDIENTES DE ENVÍO DE GOBERNANTA
+        if (estaEntregado) return false;
+
+        if (!txtApellido && !valFecha) {
+          return estaPendienteEnvio;
+        }
+
+        var coincideTexto = !txtApellido || (detalleLower.indexOf(txtApellido) !== -1);
+        var coincideFecha = true;
+        if (valFecha && item.fecha) {
+          var partes = item.fecha.split(" ")[0].split("/");
+          if (partes.length === 3) {
+            var fechaISO = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+            coincideFecha = (fechaISO === valFecha);
+          }
+        }
+        return coincideTexto && coincideFecha;
+      });
+
+      if (resultados.length === 0) {
+        if (!txtApellido && !valFecha) {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 600;">📦 No hay objetos pendientes de envío actualmente en depósito.</div>';
+        } else {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: #64748b;">No se encontraron olvidos pendientes con esos datos.</div>';
+        }
+        return;
+      }
+
+      var html = '';
+      resultados.forEach(function(item) {
+        var detalleLower = (item.detalle || '').toLowerCase();
+        
+        var estaEntregado = detalleLower.indexOf("✅ [entregado") !== -1 || detalleLower.indexOf("✅ [finalizada") !== -1;
+        var estaPendienteEnvio = !estaEntregado && (detalleLower.indexOf("pendiente") !== -1 || detalleLower.indexOf("reactivada") !== -1 || detalleLower.indexOf("guía") !== -1 || detalleLower.indexOf("guia") !== -1);
+
+        var claseCard = 'card-olvido';
+        if (estaPendienteEnvio) claseCard += ' pendiente-envio';
+        if (estaEntregado) claseCard += ' entregado';
+
+        html += '<div class="' + claseCard + '">';
+        html += '  <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; margin-bottom: 4px;">';
+        html += '    <span>📅 Registrado: ' + item.fecha + '</span>';
+        html += '    <span>Por: ' + item.usuario + '</span>';
+        html += '  </div>';
+        
+        html += parsearDetalleConRespuestas(item.detalle);
+
+        if (!estaEntregado) {
+          html += '  <div style="display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px; align-items: center; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">';
+          html += '    <input type="text" id="respDeposito_' + item.rowIndex + '" class="deposito-input" placeholder="Escribir comentario sobre el envío...">';
+          html += '    <button class="btn-gob blue" onclick="responderDepositoGobernanta(' + item.rowIndex + ')">📘 Responder</button>';
+          html += '  </div>';
+        }
+
+        html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px;">';
+        if (estaPendienteEnvio) {
+          html += '    <span class="badge-count pending" style="align-self:center;">📦 PENDIENTE DE ENVÍO (GUÍA)</span>';
+          html += '    <button class="btn-entregado" onclick="marcarComoEntregadoDirecto(' + item.rowIndex + ')">✔ Marcar como Entregado</button>';
+        } else if (estaEntregado) {
+          html += '    <span class="badge-entregado">✅ ENTREGADO Y ARCHIVADO</span>';
+        } else {
+          html += '    <span></span>';
+        }
+        html += '  </div>';
+
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    function responderDepositoGobernanta(rowIndex) {
+      detenerAlarmaContinua();
+      var input = document.getElementById('respDeposito_' + rowIndex);
+      var texto = input ? input.value.trim() : '';
+      if (!texto) return alert('Por favor ingrese un mensaje.');
+
+      var item = todasNovedadesGeneral.find(function(n) { return n.rowIndex === rowIndex; });
+      if (item) {
+        var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+        var nuevaLinea = "\n↳ [" + fechaAhora + " - GOBERNANTA]: " + texto;
+        item.detalle += nuevaLinea;
+
+        buscarEnDeposito();
+      }
+
+      var params = new URLSearchParams({
+        action: "agregarRespuesta",
+        rowIndex: rowIndex,
+        nombreUsuario: "GOBERNANTA",
+        textoRespuesta: texto
+      });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    }
+
+    function marcarComoEntregadoDirecto(rowIndex) {
+      var nov = todasNovedadesGeneral.find(function(n) { return n.rowIndex === rowIndex; });
+      if (!nov) return;
+
+      var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+      var textoEntrega = "✅ [ENTREGADO el " + fechaAhora + " por GOBERNANTA]";
+
+      nov.detalle += "\n\n" + textoEntrega;
+
+      // ACTUALIZAR INMEDIATAMENTE CONTADORES Y LA VISTA DE GOBERNANTA
+      actualizarContadorPestanaDeposito();
+      buscarEnDeposito();
+
+      var params = new URLSearchParams({
+        action: "agregarRespuesta",
+        rowIndex: rowIndex,
+        nombreUsuario: "GOBERNANTA",
+        textoRespuesta: textoEntrega
+      });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    }
+  </script>
+
+  <!-- Registro del Service Worker para PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(reg) {
+            console.log('Service Worker Registrado con éxito:', reg.scope);
+          })
+          .catch(function(err) {
+            console.log('Error al registrar Service Worker:', err);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
