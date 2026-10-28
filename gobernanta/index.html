@@ -149,7 +149,7 @@
     <!-- Formulario de creación de nota -->
     <div id="formCrearNota" class="form-crear-card">
       <h3>👑 Crear Nueva Solicitud de Gobernanta</h3>
-      <form id="formGobernantaNota">
+      <form id="formGobernantaNota" onsubmit="guardarNovedadGobernanta(event)">
         <div class="form-grid">
           <div class="form-group">
             <label>Sector / Origen:</label>
@@ -201,11 +201,102 @@
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyG6na408qBLd8sSuM2b6BTmxH49NpPUf0r68feR6Rk1SE2GwOQoVjnlqoMIZDUEMC6hA/exec";
     var personalGlobal = { mucamas: [], areas: [] };
     var listaPersonalCompleta = [];
+    var turnoActivo = false;
+    var intervaloTimer = null;
 
     window.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('fecha-gobernanta').innerText = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       cargarPersonalDesdeSheets();
+      verificarEstadoTurno();
+      cargarNotasGobernanta();
     });
 
+    /* ==========================================
+       LÓGICA DEL CONTROL DE TURNO (8 HORAS)
+       ========================================== */
+    function verificarEstadoTurno() {
+      fetch(SCRIPT_URL + "?action=obtenerEstadoTurno&rol=GOBERNANTA")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.turnoActivo) {
+            turnoActivo = true;
+            actualizarBotonTurno(true);
+            iniciarCronometro(data.inicioTurno);
+          } else {
+            turnoActivo = false;
+            actualizarBotonTurno(false);
+          }
+        })
+        .catch(err => console.error("Error al obtener el estado del turno:", err));
+    }
+
+    function toggleTurno() {
+      var accion = turnoActivo ? "registrarFinTurno" : "registrarInicioTurno";
+      var params = new URLSearchParams({ action: accion, rol: "GOBERNANTA" });
+
+      document.getElementById('btnShift').disabled = true;
+
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('btnShift').disabled = false;
+          if (data.status === "success") {
+            turnoActivo = !turnoActivo;
+            actualizarBotonTurno(turnoActivo);
+            if (turnoActivo) {
+              iniciarCronometro(data.inicioTurno || new Date().getTime());
+            } else {
+              clearInterval(intervaloTimer);
+              document.getElementById('timerDisplay').innerText = "08:00:00";
+            }
+          } else {
+            alert("Error al registrar turno: " + (data.message || "Intente de nuevo"));
+          }
+        })
+        .catch(err => {
+          document.getElementById('btnShift').disabled = false;
+          alert("Error de conexión al procesar el turno.");
+        });
+    }
+
+    function actualizarBotonTurno(activo) {
+      var btn = document.getElementById('btnShift');
+      if (activo) {
+        btn.innerText = "⏹ FINALIZAR TURNO";
+        btn.classList.add('active');
+      } else {
+        btn.innerText = "▶ INICIAR TURNO (8 HORAS)";
+        btn.classList.remove('active');
+      }
+    }
+
+    function iniciarCronometro(inicioMs) {
+      if (intervaloTimer) clearInterval(intervaloTimer);
+      
+      intervaloTimer = setInterval(function() {
+        var tiempoTranscurrido = new Date().getTime() - inicioMs;
+        var tiempoRestante = (8 * 60 * 60 * 1000) - tiempoTranscurrido;
+        
+        if (tiempoRestante <= 0) {
+          document.getElementById('timerDisplay').innerText = "00:00:00";
+          clearInterval(intervaloTimer);
+          return;
+        }
+
+        var horas = Math.floor(tiempoRestante / (1000 * 60 * 60));
+        var minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+        var segundos = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
+
+        document.getElementById('timerDisplay').innerText = 
+          String(horas).padStart(2, '0') + ":" + 
+          String(minutos).padStart(2, '0') + ":" + 
+          String(segundos).padStart(2, '0');
+      }, 1000);
+    }
+
+    /* ==========================================
+       GESTIÓN DE PERSONAL Y DENEGACIÓN DE ERRORES
+       ========================================== */
     function cargarPersonalDesdeSheets() {
       fetch(SCRIPT_URL + "?action=getUsuarios")
         .then(res => res.json())
@@ -240,6 +331,8 @@
           if (data && data.personal) {
             listaPersonalCompleta = data.personal.filter(p => p.estado === 'ACTIVO');
             renderListaPersonalAdmin();
+          } else {
+            cont.innerHTML = '<div style="text-align: center; color: #ef4444;">No se recibieron datos válidos.</div>';
           }
         })
         .catch(err => {
@@ -331,6 +424,9 @@
         });
     }
 
+    /* ==========================================
+       LÓGICA DEL FORMULARIO Y NOVEDADES
+       ========================================== */
     function cambiarSectorFormGobernanta() {
       var sector = document.getElementById('gobSector').value;
       var comboHab = document.getElementById('gobHabitacion');
@@ -351,8 +447,69 @@
       box.style.display = box.style.display === 'block' ? 'none' : 'block';
     }
 
-    function toggleTurno() {}
-    function cargarNotasGobernanta() {}
+    function guardarNovedadGobernanta(e) {
+      e.preventDefault();
+      var btn = document.getElementById('btnEnviarGob');
+      btn.disabled = true;
+
+      var params = new URLSearchParams({
+        action: "guardarNovedadMucama",
+        mucama: document.getElementById('gobHabitacion').value,
+        piso: document.getElementById('gobPiso').value,
+        habitacion: document.getElementById('gobSector').value === 'AREAS_PUBLICAS' ? 'ÁREAS PÚBLICAS' : 'HABITACIÓN',
+        detalle: document.getElementById('gobDetalle').value
+      });
+
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+        .then(res => res.json())
+        .then(data => {
+          btn.disabled = false;
+          if (data.status === "success") {
+            alert("✔ Solicitud guardada con éxito.");
+            document.getElementById('formGobernantaNota').reset();
+            toggleFormNota();
+            cargarNotasGobernanta();
+          } else {
+            alert("Error al guardar: " + data.message);
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          alert("Error al conectar con la hoja de cálculo.");
+        });
+    }
+
+    function cargarNotasGobernanta() {
+      var cont = document.getElementById('contenedorNotasGobernanta');
+      cont.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b;">Cargando notas...</div>';
+
+      fetch(SCRIPT_URL + "?action=getNovedadesGobernancia")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.novedades && data.novedades.length > 0) {
+            var html = '';
+            data.novedades.forEach(nov => {
+              html += `
+                <div class="card-nota">
+                  <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                    <span>📌 Piso ${nov.piso} - ${nov.habitacion}</span>
+                    <small style="color: #64748b;">${nov.fecha}</small>
+                  </div>
+                  <div><strong>Asignado:</strong> ${nov.mucama}</div>
+                  <div><strong>Detalle:</strong> ${nov.detalle}</div>
+                  <div><strong>Estado:</strong> <span style="font-weight:700; color:${nov.estado === 'SOLUCIONADO' ? '#10b981' : '#f59e0b'}">${nov.estado}</span></div>
+                </div>
+              `;
+            });
+            cont.innerHTML = html;
+          } else {
+            cont.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b;">No hay novedades registradas.</div>';
+          }
+        })
+        .catch(err => {
+          cont.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar las novedades.</div>';
+        });
+    }
   </script>
 </body>
 </html>
