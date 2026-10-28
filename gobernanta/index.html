@@ -43,7 +43,7 @@
 
     .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    /* ESTILOS DEL PANEL DE TURNO (MANTENIMIENTO ADAPTADO) */
+    /* ESTILOS DEL PANEL DE TURNO */
     .shift-panel {
       background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;
       padding: clamp(12px, 2vw, 16px); margin-bottom: clamp(14px, 2.5vw, 20px); text-align: center;
@@ -259,6 +259,29 @@
     .btn-page:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
     .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ESTILOS DE MODALES DE GESTIÓN DE PERSONAL */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000;
+      justify-content: center; align-items: center; padding: 16px;
+    }
+    .modal-card {
+      background: #ffffff; border-radius: 16px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    .modal-title { font-size: 1.15rem; font-weight: 800; color: #1e293b; }
+    
+    .table-users { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.88rem; }
+    .table-users th, .table-users td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .table-users th { background: #f8fafc; font-weight: 700; color: #475569; text-transform: uppercase; font-size: 0.75rem; }
+    .table-users tr:hover { background: #f1f5f9; }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; }
+    .btn-sm.edit { background-color: #3b82f6; color: white; }
+    .btn-sm.delete { background-color: #ef4444; color: white; }
+
     .loading { text-align: center; padding: 40px; color: #64748b; font-size: 0.95rem; }
 
     @media (max-width: 640px) {
@@ -293,6 +316,7 @@
       </div>
       <div class="header-actions">
         <button class="btn-gob red" onclick="detenerAlarmaContinua()">🔕 Silenciar Alarma</button>
+        <button class="btn-gob purple" onclick="abrirModalGestionPersonal()">👥 Gestionar Personal</button>
         <button class="btn-gob purple" onclick="toggleFormNota()">➕ Crear Nota</button>
         <button class="btn-gob blue" onclick="cargarNotasGobernanta()">🔄 Actualizar</button>
       </div>
@@ -336,6 +360,13 @@
           <div class="form-group" id="groupGobHabitacion">
             <label id="labelGobHabitacion">N° Habitación:</label>
             <input type="text" id="gobHabitacion" class="input-form" placeholder="Ej: 305" required>
+          </div>
+
+          <div class="form-group" id="groupGobMucama" style="display: none;">
+            <label>Mucama Asignada:</label>
+            <select id="gobMucamaNombre" class="input-form">
+              <option value="GOBERNANTA">👑 Gobernanta (Directo)</option>
+            </select>
           </div>
         </div>
 
@@ -461,10 +492,85 @@
 
   </div>
 
+  <!-- MODAL DE GESTIÓN DE PERSONAL -->
+  <div id="modalGestionPersonal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">👥 Gestión de Personal (Pestaña PERSONAL)</span>
+        <button type="button" class="btn-reset" onclick="cerrarModalGestionPersonal()" style="height: auto; padding: 4px 10px;">✖</button>
+      </div>
+
+      <!-- Formulario para agregar usuario -->
+      <form id="formAgregarUsuario" onsubmit="guardarNuevoUsuario(event)" style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+        <strong style="font-size: 0.85rem; color: #334155; display: block; margin-bottom: 8px;">➕ Agregar Nuevo Empleado / Personal</strong>
+        <div class="form-grid" style="margin-bottom: 8px;">
+          <div class="form-group">
+            <label>Nombre y Apellido:</label>
+            <input type="text" id="nuevoUserNombre" class="input-form" placeholder="Ej: María López" required>
+          </div>
+          <div class="form-group">
+            <label>Rol / Sector:</label>
+            <select id="nuevoUserRol" class="input-form" required>
+              <option value="MUCAMAS">Mucama</option>
+              <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-gob purple" style="width: 100%;">💾 Guardar Nuevo Usuario</button>
+      </form>
+
+      <!-- Tabla de usuarios activos/inactivos -->
+      <div style="overflow-x: auto;">
+        <table class="table-users">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Rol/Sector</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyUsuarios">
+            <tr><td colspan="4" style="text-align: center;">Cargando lista de personal...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA EDITAR / MODIFICAR NOMBRE DE USUARIO -->
+  <div id="modalEditarUsuario" class="modal-overlay" style="z-index: 1050;">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Modificar Usuario</span>
+        <button type="button" class="btn-reset" onclick="cerrarModalEditarUsuario()" style="height: auto; padding: 4px 10px;">✖</button>
+      </div>
+      <form id="formEditarUsuario" onsubmit="confirmarModificacionUsuario(event)">
+        <input type="hidden" id="editRowIndex">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Nombre Completo:</label>
+          <input type="text" id="editUserNombre" class="input-form" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Rol / Sector:</label>
+          <select id="editUserRol" class="input-form" required>
+            <option value="MUCAMAS">Mucama</option>
+            <option value="AREAS_PUBLICAS">Áreas Públicas</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="btn-reset" onclick="cerrarModalEditarUsuario()" style="height: auto;">Cancelar</button>
+          <button type="submit" class="btn-gob blue">💾 Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzICY4EVygqbHyPyDG9xgNdA9_hiqLxW6Gr5JHDWtm91HhV6PdPozmQ1v29EtQ_wvsNQ/exec";
     var novedadesLocales = [];
     var todasNovedadesGeneral = []; 
+    var listaUsuariosCompleta = [];
     var estadoPestanaActiva = "PENDIENTE";
     
     var paginaActual = 1;
@@ -474,7 +580,7 @@
     var idsNotasConocidas = new Set();
     var primeraCargaRealizada = false;
 
-    /* VARIABLES DE CONTROL DE TURNO Y ALARMA (MANTENIMIENTO ADAPTADO) */
+    /* VARIABLES DE CONTROL DE TURNO Y ALARMA */
     var DURACION_TURNO_SEGUNDOS = 8 * 3600;
     var ROL_ACTUAL = "GOBERNANTA";
     var timerInterval = null;
@@ -484,7 +590,7 @@
     var audioCtx = null;
     var audioHTML5 = null;
     var audioDesbloqueado = false;
-    var silenciadoPermanente = localStorage.getItem('GOB_Gobernanta_SILENCIADO') === 'true';
+    var silenciadoPermanente = localStorage.getItem('GOB_GOBERNANTA_SILENCIADO') === 'true';
 
     var intervaloAlarmaRepetida = null;
     var tiempoLimiteAlarma = null;
@@ -731,6 +837,158 @@
       }
     }
 
+    /* GESTIÓN DE PERSONAL / USUARIOS DESDE LA HOJA PERSONAL */
+    function cargarUsuariosMucamaForm() {
+      fetch(SCRIPT_URL + "?action=getUsuarios")
+        .then(res => res.json())
+        .then(data => {
+          var selectMucama = document.getElementById('gobMucamaNombre');
+          if (!selectMucama) return;
+          selectMucama.innerHTML = '<option value="GOBERNANTA">👑 Gobernanta (Directo)</option>';
+          if (data && data.mucamas) {
+            data.mucamas.forEach(m => {
+              var opt = document.createElement('option');
+              opt.value = m;
+              opt.innerText = "🧹 " + m;
+              selectMucama.appendChild(opt);
+            });
+          }
+        })
+        .catch(err => console.log("Error al cargar usuarios mucamas:", err));
+    }
+
+    function abrirModalGestionPersonal() {
+      document.getElementById('modalGestionPersonal').style.display = 'flex';
+      cargarListaPersonalCompleta();
+    }
+
+    function cerrarModalGestionPersonal() {
+      document.getElementById('modalGestionPersonal').style.display = 'none';
+    }
+
+    function cargarListaPersonalCompleta() {
+      var tbody = document.getElementById('tbodyUsuarios');
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Cargando usuarios...</td></tr>';
+
+      fetch(SCRIPT_URL + "?action=getListaPersonalCompleta")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.personal) {
+            listaUsuariosCompleta = data.personal;
+            renderTablaUsuarios(listaUsuariosCompleta);
+          } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay personal registrado.</td></tr>';
+          }
+        })
+        .catch(err => {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error al obtener usuarios.</td></tr>';
+        });
+    }
+
+    function renderTablaUsuarios(lista) {
+      var tbody = document.getElementById('tbodyUsuarios');
+      if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay registros.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      lista.forEach(u => {
+        var estadoBadge = u.estado === 'INACTIVO' ? '<span style="color:#ef4444; font-weight:bold;">INACTIVO</span>' : '<span style="color:#10b981; font-weight:bold;">ACTIVO</span>';
+        html += `
+          <tr>
+            <td><strong>${u.nombre}</strong></td>
+            <td>${u.rol}</td>
+            <td>${estadoBadge}</td>
+            <td>
+              <button class="btn-sm edit" onclick="abrirModalEditarUsuario(${u.rowIndex}, '${u.nombre}', '${u.rol}')">✏️ Editar</button>
+              ${u.estado !== 'INACTIVO' ? `<button class="btn-sm delete" onclick="desactivarUsuario('${u.nombre}')">🚫 Dar Baja</button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function guardarNuevoUsuario(e) {
+      e.preventDefault();
+      var nombre = document.getElementById('nuevoUserNombre').value.trim();
+      var rol = document.getElementById('nuevoUserRol').value;
+
+      if (!nombre) return alert("Por favor ingresa un nombre.");
+
+      var params = new URLSearchParams({ action: "guardarUsuario", nombre: nombre, rol: rol });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            alert("Usuario guardado con éxito.");
+            document.getElementById('formAgregarUsuario').reset();
+            cargarListaPersonalCompleta();
+            cargarUsuariosMucamaForm();
+          } else {
+            alert("Error al guardar usuario: " + data.message);
+          }
+        });
+    }
+
+    function abrirModalEditarUsuario(rowIndex, nombre, rol) {
+      document.getElementById('editRowIndex').value = rowIndex;
+      document.getElementById('editUserNombre').value = nombre;
+      document.getElementById('editUserRol').value = rol;
+      document.getElementById('modalEditarUsuario').style.display = 'flex';
+    }
+
+    function cerrarModalEditarUsuario() {
+      document.getElementById('modalEditarUsuario').style.display = 'none';
+    }
+
+    function confirmarModificacionUsuario(e) {
+      e.preventDefault();
+      var rowIndex = document.getElementById('editRowIndex').value;
+      var nuevoNombre = document.getElementById('editUserNombre').value.trim();
+      var nuevoRol = document.getElementById('editUserRol').value;
+
+      if (!nuevoNombre) return alert("El nombre no puede estar vacío.");
+
+      var params = new URLSearchParams({
+        action: "modificarUsuario",
+        rowIndex: rowIndex,
+        nuevoNombre: nuevoNombre,
+        nuevoRol: nuevoRol
+      });
+
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            alert("Usuario modificado exitosamente.");
+            cerrarModalEditarUsuario();
+            cargarListaPersonalCompleta();
+            cargarUsuariosMucamaForm();
+          } else {
+            alert("Error al modificar usuario: " + data.message);
+          }
+        });
+    }
+
+    function desactivarUsuario(nombre) {
+      if (!confirm(`¿Está seguro de que desea dar de baja al usuario "${nombre}"?`)) return;
+
+      var params = new URLSearchParams({ action: "eliminarUsuario", nombre: nombre });
+      fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            alert("Usuario dado de baja.");
+            cargarListaPersonalCompleta();
+            cargarUsuariosMucamaForm();
+          } else {
+            alert("Error al desactivar usuario: " + data.message);
+          }
+        });
+    }
+
     function consultarServidor() {
       cargarNovedadesGeneralParaDeposito();
 
@@ -794,6 +1052,7 @@
       actualizarBotonSilencio();
       sincronizarTurnoConServidor();
       cargarNotasGobernanta();
+      cargarUsuariosMucamaForm();
       cambiarSectorFormGobernanta();
       if (pollingInterval) clearInterval(pollingInterval);
       pollingInterval = setInterval(consultarServidor, 8000);
@@ -810,6 +1069,7 @@
       var labelPiso = document.getElementById('labelGobPiso');
       var inputHab = document.getElementById('gobHabitacion');
       var groupHab = document.getElementById('groupGobHabitacion');
+      var groupMucama = document.getElementById('groupGobMucama');
 
       if (sector === 'AREAS_PUBLICAS') {
         labelPiso.innerText = 'Área Pública / Sector:';
@@ -825,6 +1085,7 @@
           <option value="Parque">Parque</option>
         `;
         groupHab.style.display = 'none';
+        groupMucama.style.display = 'none';
         inputHab.required = false;
         inputHab.value = 'Área Pública';
       } else {
@@ -839,6 +1100,7 @@
           <option value="FLOTANTE">FLOTANTE</option>
         `;
         groupHab.style.display = 'flex';
+        groupMucama.style.display = 'flex';
         inputHab.required = true;
         if (inputHab.value === 'Área Pública') inputHab.value = '';
       }
@@ -914,11 +1176,12 @@
       var piso = document.getElementById('gobPiso').value;
       var habitacion = document.getElementById('gobHabitacion').value;
       var detalle = document.getElementById('gobDetalle').value;
+      var mucamaSeleccionada = document.getElementById('gobMucamaNombre').value;
 
       var fechaAhora = new Date().toLocaleDateString('es-ES') + " " + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
       var nextIndex = novedadesLocales.length > 0 ? Math.max(...novedadesLocales.map(n => n.rowIndex || 0)) + 1 : 2;
 
-      var origenFirma = (sector === 'AREAS_PUBLICAS') ? "ÁREAS PÚBLICAS" : "GOBERNANTA";
+      var origenFirma = (sector === 'AREAS_PUBLICAS') ? "ÁREAS PÚBLICAS" : mucamaSeleccionada;
       var habFinal = (sector === 'AREAS_PUBLICAS') ? (piso || "Áreas Públicas") : habitacion;
 
       var nuevaNotaLocal = {
