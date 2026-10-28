@@ -1,11 +1,12 @@
 {
-  "id": "/index",
-  "name": "Control de Novedades Hotel",
-  "short_name": "Novedades",
+  "id": "app-panel-principal",
+  "scope": "./",
   "start_url": "./index.html",
+  "name": "Novedades Hotel - Paneles",
+  "short_name": "Hotel Paneles",
   "display": "standalone",
-  "background_color": "#4a2c40",
-  "theme_color": "#4a2c40",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
     {
