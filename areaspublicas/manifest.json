@@ -5,20 +5,20 @@
   "name": "Áreas Públicas - Hotel",
   "short_name": "Áreas Públicas",
   "display": "standalone",
-  "background_color": "#4a2c40",
-  "theme_color": "#4a2c40",
+  "background_color": "#8b5cf6",
+  "theme_color": "#8b5cf6",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "../logo.jpg",
+      "src": "/novedades-hotel/logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "../logo.jpg",
+      "src": "/novedades-hotel/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]
