@@ -335,8 +335,10 @@
           </div>
 
           <div class="form-group" id="groupGobHabitacion">
-            <label id="labelGobHabitacion">N° Habitación:</label>
-            <input type="text" id="gobHabitacion" class="input-form" placeholder="Ej: 305" required>
+            <label id="labelGobHabitacion">N° Habitación / Personal:</label>
+            <select id="gobHabitacion" class="input-form" required>
+              <option value="">Cargando personal...</option>
+            </select>
           </div>
         </div>
 
@@ -468,6 +470,7 @@
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZ947xY4ByH8CTzXA9EM_D8FH-S-h6yDlkeTF8B9U3UhuW814qePa65fGhgKC4mDVW/exec";
     var novedadesLocales = [];
     var todasNovedadesGeneral = []; 
+    var personalGlobal = { mucamas: [], areas: [] };
     var estadoPestanaActiva = "PENDIENTE";
     
     var paginaActual = 1;
@@ -526,7 +529,21 @@
 
     window.addEventListener('DOMContentLoaded', function() {
       sincronizarTurnoConServidor();
+      cargarPersonalDesdeSheets();
     });
+
+    function cargarPersonalDesdeSheets() {
+      fetch(SCRIPT_URL + "?action=getUsuarios")
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            personalGlobal.mucamas = data.mucamas || [];
+            personalGlobal.areas = data.areas || [];
+            cambiarSectorFormGobernanta();
+          }
+        })
+        .catch(err => console.error("Error cargando personal:", err));
+    }
 
     function sincronizarTurnoConServidor() {
       fetch(SCRIPT_URL + "?action=obtenerEstadoTurno&rol=" + ROL_ACTUAL)
@@ -740,7 +757,6 @@
             var countPend = novedadesLocales.filter(n => n.estado === 'PENDIENTE').length;
             actualizarTituloContador(countPend);
 
-            // DETECTAR SI EL USUARIO ESTÁ ESCRIBIENDO EN CUALQUIERA DE LAS DOS VISTAS
             var elementoActivo = document.activeElement;
             var usuarioEscribiendo = elementoActivo && (
               elementoActivo.tagName === 'INPUT' || 
@@ -751,7 +767,6 @@
               elementoActivo.closest('#vista-deposito')
             );
 
-            // SOLO RE-RENDERIZAR SI NO ESTÁ ESCRIBIENDO
             if (!usuarioEscribiendo) {
               if (estadoPestanaActiva === 'DEPOSITO') {
                 buscarEnDeposito();
@@ -793,8 +808,8 @@
       var sector = document.getElementById('gobSector').value;
       var comboPiso = document.getElementById('gobPiso');
       var labelPiso = document.getElementById('labelGobPiso');
-      var inputHab = document.getElementById('gobHabitacion');
-      var groupHab = document.getElementById('groupGobHabitacion');
+      var comboHab = document.getElementById('gobHabitacion');
+      var labelHab = document.getElementById('labelGobHabitacion');
 
       if (sector === 'AREAS_PUBLICAS') {
         labelPiso.innerText = 'Área Pública / Sector:';
@@ -809,9 +824,12 @@
           <option value="Bar/restaurante">Bar/restaurante</option>
           <option value="Parque">Parque</option>
         `;
-        groupHab.style.display = 'none';
-        inputHab.required = false;
-        inputHab.value = 'Área Pública';
+        labelHab.innerText = 'Personal a Cargo:';
+        var htmlAP = '<option value="">Seleccionar Personal...</option>';
+        personalGlobal.areas.forEach(function(nom) {
+          htmlAP += '<option value="' + nom + '">' + nom + '</option>';
+        });
+        comboHab.innerHTML = htmlAP;
       } else {
         labelPiso.innerText = 'Piso:';
         comboPiso.innerHTML = `
@@ -823,9 +841,12 @@
           <option value="6">Piso 6</option>
           <option value="FLOTANTE">FLOTANTE</option>
         `;
-        groupHab.style.display = 'flex';
-        inputHab.required = true;
-        if (inputHab.value === 'Área Pública') inputHab.value = '';
+        labelHab.innerText = 'Mucama Asignada:';
+        var htmlMuc = '<option value="">Seleccionar Mucama...</option>';
+        personalGlobal.mucamas.forEach(function(nom) {
+          htmlMuc += '<option value="' + nom + '">' + nom + '</option>';
+        });
+        comboHab.innerHTML = htmlMuc;
       }
     }
 
@@ -853,7 +874,6 @@
       renderNotasGobernanta();
     }
 
-    /* FILTRO DE UBICACIÓN ACTUALIZADO CON FLOTANTE */
     function actualizarSubfiltroUbicacion() {
       var sector = document.getElementById('filtroSector').value;
       var comboUbicacion = document.getElementById('filtroUbicacion');
@@ -905,7 +925,7 @@
       var nextIndex = novedadesLocales.length > 0 ? Math.max(...novedadesLocales.map(n => n.rowIndex || 0)) + 1 : 2;
 
       var origenFirma = (sector === 'AREAS_PUBLICAS') ? "ÁREAS PÚBLICAS" : "GOBERNANTA";
-      var habFinal = (sector === 'AREAS_PUBLICAS') ? (piso || "Áreas Públicas") : habitacion;
+      var habFinal = habitacion || piso;
 
       var nuevaNotaLocal = {
         rowIndex: nextIndex, fecha: fechaAhora, mucama: origenFirma, piso: piso, habitacion: habFinal,
@@ -1099,7 +1119,6 @@
     }
 
     function renderNotasGobernanta() {
-      // GUARDAR BORRADORES TEMPORALES DE LOS INPUTS ANTES DE RECREAR EL DOM
       var borradoresActuales = {};
       document.querySelectorAll('[id^="respGob_"]').forEach(function(inp) {
         if (inp.value) {
@@ -1142,7 +1161,6 @@
                             mucamaNorm.includes(txtBusqueda) || 
                             detalleNorm.includes(txtBusqueda);
 
-        // Validación de Sector
         var coincideSector = true;
         var esAreasPublicas = mucamaNorm.includes('AREAS PUBLICAS') || 
                               mucamaNorm.includes('AREA PUBLICA') || 
@@ -1159,7 +1177,6 @@
           coincideSector = esAreasPublicas;
         }
 
-        // Validación de Piso / Área específica
         var coincideUbicacion = true;
         if (selUbicacion !== '') {
           var ubNorm = normalizarTexto(selUbicacion);
@@ -1270,7 +1287,6 @@
 
       contenedor.innerHTML = html;
 
-      // RESTAURAR BORRADORES NO ENVIADOS
       Object.keys(borradoresActuales).forEach(function(inputId) {
         var elem = document.getElementById(inputId);
         if (elem) {
@@ -1337,7 +1353,6 @@
     }
 
     function buscarEnDeposito() {
-      // GUARDAR BORRADORES TEMPORALES ANTES DE RECREAR EL DOM
       var borradoresActuales = {};
       document.querySelectorAll('[id^="respDeposito_"]').forEach(function(inp) {
         if (inp.value) {
@@ -1435,7 +1450,6 @@
 
       container.innerHTML = html;
 
-      // RESTAURAR BORRADORES NO ENVIADOS EN DEPÓSITO
       Object.keys(borradoresActuales).forEach(function(inputId) {
         var elem = document.getElementById(inputId);
         if (elem) {
@@ -1477,7 +1491,6 @@
 
       nov.detalle += "\n\n" + textoEntrega;
 
-      // ACTUALIZAR INMEDIATAMENTE CONTADORES Y LA VISTA DE GOBERNANTA
       actualizarContadorPestanaDeposito();
       buscarEnDeposito();
 
