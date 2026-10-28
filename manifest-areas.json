@@ -1,7 +1,7 @@
 {
   "name": "Áreas Públicas - Hotel",
   "short_name": "Áreas Públicas",
-  "start_url": "./areas-publicas.html",
+  "start_url": "./areaspublicas.html",
   "display": "standalone",
   "background_color": "#4a2c40",
   "theme_color": "#4a2c40",
@@ -10,13 +10,13 @@
     {
       "src": "./logo.jpg",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "./logo.jpg",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
