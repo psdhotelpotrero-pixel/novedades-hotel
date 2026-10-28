@@ -1,4 +1,5 @@
 {
+  "id": "/index",
   "name": "Control de Novedades Hotel",
   "short_name": "Novedades",
   "start_url": "./index.html",
