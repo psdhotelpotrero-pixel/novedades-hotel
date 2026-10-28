@@ -1,4 +1,5 @@
 {
+  "id": "/mantenimiento",
   "name": "Mantenimiento - Hotel",
   "short_name": "Mantenimiento",
   "start_url": "./mantenimiento.html",
