@@ -22,8 +22,9 @@
       --warning: #f59e0b;
       --gobernanta-color: #8b5cf6;
       --gobernanta-hover: #7c3aed;
-      --ap-color: #d97706;
-      --ap-bg: #fffbe6;
+      /* Nuevos colores violeta para Áreas Públicas */
+      --ap-color: #8b5cf6;
+      --ap-bg: #f3e8ff;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -151,13 +152,14 @@
     .card-nota.pendiente { border-left-color: #d97706 !important; background: #fffdf5; border-top: 1px solid #fde68a; border-right: 1px solid #fde68a; border-bottom: 1px solid #fde68a; }
     .card-nota.es-gobernanta { border-left-color: var(--gobernanta-color) !important; background: #faf5ff; }
     
+    /* Notificaciones de Áreas Públicas en color VIOLETA */
     .card-nota.es-areas-publicas {
       border-left-color: var(--ap-color) !important;
       background: var(--ap-bg) !important;
-      border-top: 1px solid #fde68a;
-      border-right: 1px solid #fde68a;
-      border-bottom: 1px solid #fde68a;
-      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+      border-top: 1px solid #d8b4fe;
+      border-right: 1px solid #d8b4fe;
+      border-bottom: 1px solid #d8b4fe;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.12);
     }
 
     .card-nota.solucionado { border-left-color: #16a34a !important; background: #f0fdf4; border-top: 1px solid #bbf7d0; border-right: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; }
@@ -176,7 +178,7 @@
     .badge-origen { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-origen.gob { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
     .badge-origen.mucama { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .badge-origen.areas { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 800; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.15); }
+    .badge-origen.areas { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-weight: 800; box-shadow: 0 1px 3px rgba(139, 92, 246, 0.15); }
 
     .respuestas-container { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .respuesta-normal { background-color: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #3b82f6; padding: 8px 12px; border-radius: 8px; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
@@ -330,6 +332,7 @@
               <option value="4">Piso 4</option>
               <option value="5">Piso 5</option>
               <option value="6">Piso 6</option>
+              <option value="FLOTANTE">FLOTANTE</option>
             </select>
           </div>
 
@@ -844,6 +847,7 @@
       renderNotasGobernanta();
     }
 
+    /* FILTRO DE UBICACIÓN ACTUALIZADO CON FLOTANTE */
     function actualizarSubfiltroUbicacion() {
       var sector = document.getElementById('filtroSector').value;
       var comboUbicacion = document.getElementById('filtroUbicacion');
@@ -860,6 +864,7 @@
           <option value="4">Piso 4</option>
           <option value="5">Piso 5</option>
           <option value="6">Piso 6</option>
+          <option value="FLOTANTE">FLOTANTE</option>
         `;
       } else if (sector === 'AREAS_PUBLICAS') {
         labelUbicacion.innerText = 'Área Específica';
