@@ -1,9 +1,9 @@
 {
-  "id": "app-mucamas",
+  "id": "app-areaspublicas",
   "scope": "./",
   "start_url": "./index.html",
-  "name": "Mucamas - Hotel",
-  "short_name": "Mucamas",
+  "name": "Áreas Públicas - Hotel",
+  "short_name": "Áreas Públicas",
   "display": "standalone",
   "background_color": "#4a2c40",
   "theme_color": "#4a2c40",
