@@ -1,8 +1,9 @@
 {
-  "id": "/mantenimiento",
+  "id": "mantenimiento-app",
+  "scope": "./mantenimiento.html",
+  "start_url": "./mantenimiento.html",
   "name": "Mantenimiento - Hotel",
   "short_name": "Mantenimiento",
-  "start_url": "./mantenimiento.html",
   "display": "standalone",
   "background_color": "#4a2c40",
   "theme_color": "#4a2c40",
