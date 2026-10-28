@@ -90,17 +90,7 @@
         <div class="form-group">
           <label for="mucamaNombre">Nombre de la Mucama:</label>
           <select id="mucamaNombre" required>
-            <option value="">Seleccione su nombre...</option>
-            <option value="Muñoz Luciana">Muñoz Luciana</option>
-            <option value="La Borda Elisa">La Borda Elisa</option>
-            <option value="Lucero Mónica">Lucero Mónica</option>
-            <option value="Jofré Luján">Jofré Luján</option>
-            <option value="Rojas María">Rojas María</option>
-            <option value="Rosales Mónica">Rosales Mónica</option>
-            <option value="Olivo Cintia">Olivo Cintia</option>
-            <option value="Pereira Érica">Pereira Érica</option>
-            <option value="Florencia">Florencia</option>
-            <option value="Evangelina">Evangelina</option>
+            <option value="">Cargando nombres...</option>
           </select>
         </div>
 
@@ -136,6 +126,32 @@
 
   <script>
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZ947xY4ByH8CTzXA9EM_D8FH-S-h6yDlkeTF8B9U3UhuW814qePa65fGhgKC4mDVW/exec";
+
+    // Cargar nombres de mucamas dinámicamente al iniciar la página
+    window.addEventListener('DOMContentLoaded', function() {
+      cargarListaMucamas();
+    });
+
+    function cargarListaMucamas() {
+      var select = document.getElementById('mucamaNombre');
+      fetch(SCRIPT_URL + "?action=getUsuarios")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.mucamas && data.mucamas.length > 0) {
+            var htmlOptions = '<option value="">Seleccione su nombre...</option>';
+            data.mucamas.forEach(function(nombre) {
+              htmlOptions += '<option value="' + nombre + '">' + nombre + '</option>';
+            });
+            select.innerHTML = htmlOptions;
+          } else {
+            select.innerHTML = '<option value="">No hay mucamas registradas</option>';
+          }
+        })
+        .catch(err => {
+          console.error("Error cargando mucamas:", err);
+          select.innerHTML = '<option value="">Error al cargar nombres</option>';
+        });
+    }
 
     document.getElementById('formMucamas').addEventListener('submit', function(e) {
       e.preventDefault();
