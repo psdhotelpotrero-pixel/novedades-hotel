@@ -6,7 +6,7 @@
   <title>Áreas Públicas - Registro de Novedades</title>
 
   <!-- Manifest para PWA -->
-<link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8b5cf6">
 
   <style>
@@ -71,12 +71,7 @@
         <div class="form-group">
           <label for="personalNombre">Nombre:</label>
           <select id="personalNombre" required>
-            <option value="">Seleccione su nombre...</option>
-            <option value="Soledad Q.">Soledad Q.</option>
-            <option value="Belén">Belén</option>
-            <option value="Soledad C.">Soledad C.</option>
-            <option value="Andrea E.">Andrea E.</option>
-            <option value="Pablo">Pablo</option>
+            <option value="">Cargando nombres...</option>
           </select>
         </div>
 
@@ -114,6 +109,32 @@
 
   <script>
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZ947xY4ByH8CTzXA9EM_D8FH-S-h6yDlkeTF8B9U3UhuW814qePa65fGhgKC4mDVW/exec";
+
+    // Cargar nombres de personal de Áreas Públicas dinámicamente al iniciar la página
+    window.addEventListener('DOMContentLoaded', function() {
+      cargarListaPersonalAreas();
+    });
+
+    function cargarListaPersonalAreas() {
+      var select = document.getElementById('personalNombre');
+      fetch(SCRIPT_URL + "?action=getUsuarios")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.areas && data.areas.length > 0) {
+            var htmlOptions = '<option value="">Seleccione su nombre...</option>';
+            data.areas.forEach(function(nombre) {
+              htmlOptions += '<option value="' + nombre + '">' + nombre + '</option>';
+            });
+            select.innerHTML = htmlOptions;
+          } else {
+            select.innerHTML = '<option value="">No hay personal de Áreas Públicas registrado</option>';
+          }
+        })
+        .catch(err => {
+          console.error("Error cargando personal de Áreas Públicas:", err);
+          select.innerHTML = '<option value="">Error al cargar nombres</option>';
+        });
+    }
 
     document.getElementById('formAreasPublicas').addEventListener('submit', function(e) {
       e.preventDefault();
