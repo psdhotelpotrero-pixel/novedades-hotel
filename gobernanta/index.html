@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>Control de Novedades - Gobernanta</title>
-  <meta name="theme-color" content="#8b5cf6">
+  <meta name="theme-color" content="#4a2c40">
+
+  <!-- Enlace al Manifest e Iconos PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" sizes="192x192" href="logo.jpg">
+  <link rel="apple-touch-icon" href="logo.jpg">
 
   <style>
     :root {
@@ -1702,6 +1707,17 @@
         textoRespuesta: textoEntrega
       });
       fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params });
+    }
+  </script>
+
+  <!-- Registro del Service Worker para PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(reg) { console.log('Service Worker activo', reg); })
+          .catch(function(err) { console.log('Error registrando Service Worker', err); });
+      });
     }
   </script>
 </body>
