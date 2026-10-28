@@ -1,7 +1,7 @@
 {
   "id": "/novedades-hotel/mucamas/",
-  "scope": "/novedades-hotel/mucamas/",
-  "start_url": "/novedades-hotel/mucamas/index.html",
+  "scope": "./",
+  "start_url": "./index.html",
   "name": "Mucamas - Hotel",
   "short_name": "Mucamas",
   "display": "standalone",
