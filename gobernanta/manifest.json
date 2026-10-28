@@ -2,7 +2,7 @@
   "id": "app-gobernanta",
   "scope": "./",
   "start_url": "./index.html",
-  "name": "Gobernanta - Hotel"
+  "name": "Gobernanta - Hotel",
   "short_name": "Gobernanta",
   "display": "standalone",
   "background_color": "#4a2c40",
@@ -10,15 +10,15 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "../logo.jpg",
+      "src": "./logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "../logo.jpg",
+      "src": "./logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]
