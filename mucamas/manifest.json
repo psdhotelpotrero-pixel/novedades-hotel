@@ -10,16 +10,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/novedades-hotel/logo.jpg",
-      "sizes": "192x192",
+      "src": "../logo.jpg",
+      "sizes": "any",
       "type": "image/jpeg",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/novedades-hotel/logo.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
