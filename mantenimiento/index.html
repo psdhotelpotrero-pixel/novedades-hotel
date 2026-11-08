@@ -137,7 +137,7 @@
     }
 
     select {
-      background-image: url('data:image/svg+xml;utf8,<svg fill="%23475569" height="24" viewBox="0 0 24 24" width="24" xmlns="://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') !important;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23475569" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') !important;
       background-repeat: no-repeat !important; background-position: right 8px center !important;
       background-size: 18px !important; padding-right: 28px !important;
     }
@@ -658,6 +658,12 @@
     }
 
     function renderNotas() {
+      // PREVENCIÓN: Si el usuario está enfocado/escribiendo en algún campo de respuesta, pausar el render para no borrar su texto.
+      var elementoActivo = document.activeElement;
+      if (elementoActivo && elementoActivo.tagName === 'INPUT' && elementoActivo.id && elementoActivo.id.startsWith('resp_')) {
+        return;
+      }
+
       var contenedor = document.getElementById('contenedorNotas');
       var barPaginacion = document.getElementById('barPaginacion');
       
@@ -861,17 +867,15 @@
     }
   </script>
 
-  <!-- Registro del Service Worker para PWA -->
+  <!-- Limpieza de Service Workers anteriores para garantizar la actualización automática -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js')
-          .then(function(reg) {
-            console.log('Service Worker Registrado con éxito:', reg.scope);
-          })
-          .catch(function(err) {
-            console.log('Error al registrar Service Worker:', err);
-          });
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
       });
     }
   </script>
