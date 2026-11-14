@@ -216,6 +216,12 @@
     .btn-gob.green { background-color: #16a34a; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25); }
     .btn-gob.red { background-color: var(--danger); }
     .btn-gob.muted { background-color: #64748b; }
+    .btn-gob.sky { background-color: #0284c7; }
+
+    .deposito-header-actions {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; flex-wrap: wrap; gap: 10px;
+    }
 
     .deposito-search-bar { 
       display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
@@ -264,7 +270,7 @@
     .btn-page:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
     .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ESTILOS DE MODALES DE GESTIÓN DE PERSONAL */
+    /* ESTILOS DE MODALES */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000;
@@ -308,6 +314,8 @@
       .paginacion-container { flex-direction: column; text-align: center; }
       .paginacion-botones { width: 100%; justify-content: center; }
       .deposito-search-bar { grid-template-columns: 1fr; }
+      .deposito-header-actions { flex-direction: column; align-items: stretch; }
+      .deposito-header-actions button { width: 100%; }
     }
   </style>
 </head>
@@ -474,6 +482,11 @@
     </div>
 
     <div id="vista-deposito" style="display: none;">
+      <div class="deposito-header-actions">
+        <h2 style="font-size: 1.15rem; color: #1e293b; font-weight: 800;">📦 Control de Olvidos y Depósito</h2>
+        <button class="btn-gob sky" onclick="abrirModalCargarOlvido()">➕ Registrar Objeto Olvidado</button>
+      </div>
+
       <div class="deposito-search-bar">
         <div>
           <label style="font-size:0.78rem; font-weight:700; color:#475569; display:block; margin-bottom:4px; text-transform:uppercase;">🔍 Buscar por Apellido o Detalle</label>
@@ -495,6 +508,45 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- MODAL PARA REGISTRAR NUEVO OLVIDO DESDE DEPÓSITO -->
+  <div id="modalCargarOlvido" class="modal-overlay" style="z-index: 1020;">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <span class="modal-title">📦 Registrar Objeto Olvidado</span>
+        <button type="button" class="btn-reset" onclick="cerrarModalCargarOlvido()" style="height: auto; padding: 4px 10px;">✖</button>
+      </div>
+      <form id="formCargarOlvido" onsubmit="guardarOlvidoGobernanta(event)">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Apellido y Nombre del Pasajero:</label>
+          <input type="text" id="olvidoPasajero" class="input-form" placeholder="Ej: Pérez, Juan" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>N° de Habitación / Sector donde se encontró:</label>
+          <input type="text" id="olvidoHabitacion" class="input-form" placeholder="Ej: Hab. 402 / Gimnasio" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Descripción del Objeto:</label>
+          <textarea id="olvidoDetalle" class="input-form" rows="3" placeholder="Ej: Cargador iPhone blanco y gafas de sol negras..." required></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Estado Inicial en Depósito:</label>
+          <select id="olvidoEstadoInicial" class="input-form" required>
+            <option value="DEPOSITO">📦 Guardado en Depósito (A la espera de reclamo)</option>
+            <option value="PENDIENTE_ENVIO">🚚 Pendiente de Envío (Requiere gestión de guía con Recepción)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="btn-reset" onclick="cerrarModalCargarOlvido()" style="height: auto;">Cancelar</button>
+          <button type="submit" class="btn-gob sky">💾 Guardar Olvido</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- MODAL DE GESTIÓN DE PERSONAL -->
@@ -842,6 +894,83 @@
       }
     }
 
+    /* GESTIÓN DE OLVIDOS DESDE DEPÓSITO */
+    function abrirModalCargarOlvido() {
+      document.getElementById('formCargarOlvido').reset();
+      document.getElementById('modalCargarOlvido').style.display = 'flex';
+    }
+
+    function cerrarModalCargarOlvido() {
+      document.getElementById('modalCargarOlvido').style.display = 'none';
+    }
+
+    function guardarOlvidoGobernanta(e) {
+      e.preventDefault();
+
+      var pasajero = document.getElementById('olvidoPasajero').value.trim();
+      var habitacion = document.getElementById('olvidoHabitacion').value.trim();
+      var descripcion = document.getElementById('olvidoDetalle').value.trim();
+      var estadoInicial = document.getElementById('olvidoEstadoInicial').value;
+
+      if (!pasajero || !habitacion || !descripcion) return;
+
+      var fechaAhora = new Date();
+      var fechaStr = ("0" + fechaAhora.getDate()).slice(-2) + "/" + ("0" + (fechaAhora.getMonth() + 1)).slice(-2) + "/" + fechaAhora.getFullYear() + " " + ("0" + fechaAhora.getHours()).slice(-2) + ":" + ("0" + fechaAhora.getMinutes()).slice(-2);
+      var idNovedad = "NOV-" + fechaAhora.getFullYear() + ("0" + (fechaAhora.getMonth() + 1)).slice(-2) + ("0" + fechaAhora.getDate()).slice(-2) + "-" + ("0" + fechaAhora.getHours()).slice(-2) + ("0" + fechaAhora.getMinutes()).slice(-2) + ("0" + fechaAhora.getSeconds()).slice(-2);
+
+      var tituloNota = "OLVIDO - " + pasajero.toUpperCase() + " (" + habitacion.toUpperCase() + ")";
+      var detalleCompleto = "Pasajero: " + pasajero + " | Ubicación: " + habitacion + "\nDetalle: " + descripcion;
+
+      if (estadoInicial === "PENDIENTE_ENVIO") {
+        detalleCompleto += "\n\n📦 [PENDIENTE DE ENVÍO el " + fechaStr + " por GOBERNANTA - Pendiente de número de guía]";
+      } else {
+        detalleCompleto += "\n\n📦 [GUARDADO EN DEPÓSITO el " + fechaStr + " por GOBERNANTA]";
+      }
+
+      var nextRowProyectada = todasNovedadesGeneral.length > 0 ? Math.max(...todasNovedadesGeneral.map(n => n.rowIndex || 0)) + 1 : 2;
+      var detalleVisual = "📌 " + tituloNota + "\n" + detalleCompleto;
+
+      var nuevoOlvidoLocal = {
+        rowIndex: nextRowProyectada,
+        id: idNovedad,
+        fecha: fechaStr,
+        usuario: "RECEPCION - GOBERNANTA",
+        categoria: "Olvidos",
+        detalle: detalleVisual,
+        firmas: "",
+        notasAuditoria: "",
+        estadoRevision: false,
+        sinVencimiento: true,
+        finalizada: false
+      };
+
+      todasNovedadesGeneral.unshift(nuevoOlvidoLocal);
+      actualizarContadorPestanaDeposito();
+      buscarEnDeposito();
+      cerrarModalCargarOlvido();
+
+      var params = new URLSearchParams({
+        action: "guardarNovedad",
+        idNovedad: idNovedad,
+        fechaStr: fechaStr,
+        usuarioRol: "RECEPCION",
+        nombreCreador: "GOBERNANTA",
+        tituloNota: tituloNota,
+        categoria: "Olvidos",
+        detalle: detalleCompleto,
+        sinVencimiento: "true",
+        listaNotasAuditoria: "[]"
+      });
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params
+      }).then(() => {
+        cargarNovedadesGeneralParaDeposito();
+      }).catch(err => console.error("Error guardando olvido:", err));
+    }
+
     /* GESTIÓN DE PERSONAL / USUARIOS DESDE LA HOJA PERSONAL */
     function cargarUsuariosMucamaForm() {
       fetch(SCRIPT_URL + "?action=getUsuarios")
@@ -1026,7 +1155,8 @@
               elementoActivo.tagName === 'SELECT'
             ) && (
               elementoActivo.closest('#contenedorNotasGobernanta') ||
-              elementoActivo.closest('#vista-deposito')
+              elementoActivo.closest('#vista-deposito') ||
+              elementoActivo.closest('#modalCargarOlvido')
             );
 
             if (!usuarioEscribiendo) {
@@ -1344,7 +1474,7 @@
         else if (linea.indexOf('✅ [FINALIZADA') !== -1 || linea.indexOf('✅ [ENTREGADO') !== -1) {
           html += '<div class="burbuja-deposito finalizada">' + textoFormateado + '</div>';
         }
-        else if (linea.indexOf('📦 [REACTIVADA') !== -1 || linea.indexOf('REACTIVADA PARA ENVÍO') !== -1) {
+        else if (linea.indexOf('📦 [REACTIVADA') !== -1 || linea.indexOf('REACTIVADA PARA ENVÍO') !== -1 || linea.indexOf('📦 [PENDIENTE DE ENVÍO') !== -1 || linea.indexOf('📦 [GUARDADO EN DEPÓSITO') !== -1) {
           html += '<div class="burbuja-deposito reactivada">' + textoFormateado + '</div>';
         }
         else {
